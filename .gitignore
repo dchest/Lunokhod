@@ -1,2 +1,2 @@
 *.xcodeproj/dmitry.*
-build/
+build/*

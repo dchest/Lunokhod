@@ -373,7 +373,7 @@ static int pmain (lua_State *L) {
   return 0;
 }
 
-
+#if 0
 int main (int argc, char **argv) {
   int status;
   struct Smain s;
@@ -389,4 +389,4 @@ int main (int argc, char **argv) {
   lua_close(L);
   return (status || s.status) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-
+#endif

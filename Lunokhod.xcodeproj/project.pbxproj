@@ -33,12 +33,12 @@
 		0A5A498210F28E0D0017275E /* ltable.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A495B10F28E0D0017275E /* ltable.c */; };
 		0A5A498310F28E0D0017275E /* ltablib.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A495D10F28E0D0017275E /* ltablib.c */; };
 		0A5A498410F28E0D0017275E /* ltm.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A495E10F28E0D0017275E /* ltm.c */; };
-		0A5A498510F28E0D0017275E /* lua.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496010F28E0D0017275E /* lua.c */; };
-		0A5A498610F28E0D0017275E /* luac.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496210F28E0D0017275E /* luac.c */; };
 		0A5A498710F28E0D0017275E /* lundump.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496510F28E0D0017275E /* lundump.c */; };
 		0A5A498810F28E0D0017275E /* lvm.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496710F28E0D0017275E /* lvm.c */; };
 		0A5A498910F28E0D0017275E /* lzio.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496910F28E0D0017275E /* lzio.c */; };
-		8DD76F9A0486AA7600D96B5E /* Lunokhod.m in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* Lunokhod.m */; settings = {ATTRIBUTES = (); }; };
+		0A5A49C010F28FE80017275E /* Lunokhod.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A49BF10F28FE80017275E /* Lunokhod.m */; };
+		0A5A49CA10F291800017275E /* lua.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A49C910F291800017275E /* lua.c */; };
+		8DD76F9A0486AA7600D96B5E /* Test.m in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* Test.m */; settings = {ATTRIBUTES = (); }; };
 		8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
 		8DD76F9F0486AA7600D96B5E /* Lunokhod.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* Lunokhod.1 */; };
 /* End PBXBuildFile section */
@@ -57,7 +57,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		08FB7796FE84155DC02AAC07 /* Lunokhod.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Lunokhod.m; sourceTree = "<group>"; };
+		08FB7796FE84155DC02AAC07 /* Test.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Test.m; sourceTree = "<group>"; };
 		08FB779EFE84155DC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		0A5A493510F28E0D0017275E /* lapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lapi.c; path = Lua/src/lapi.c; sourceTree = "<group>"; };
 		0A5A493610F28E0D0017275E /* lapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lapi.h; path = Lua/src/lapi.h; sourceTree = "<group>"; };
@@ -102,9 +102,7 @@
 		0A5A495D10F28E0D0017275E /* ltablib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ltablib.c; path = Lua/src/ltablib.c; sourceTree = "<group>"; };
 		0A5A495E10F28E0D0017275E /* ltm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ltm.c; path = Lua/src/ltm.c; sourceTree = "<group>"; };
 		0A5A495F10F28E0D0017275E /* ltm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ltm.h; path = Lua/src/ltm.h; sourceTree = "<group>"; };
-		0A5A496010F28E0D0017275E /* lua.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lua.c; path = Lua/src/lua.c; sourceTree = "<group>"; };
 		0A5A496110F28E0D0017275E /* lua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lua.h; path = Lua/src/lua.h; sourceTree = "<group>"; };
-		0A5A496210F28E0D0017275E /* luac.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = luac.c; path = Lua/src/luac.c; sourceTree = "<group>"; };
 		0A5A496310F28E0D0017275E /* luaconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = luaconf.h; path = Lua/src/luaconf.h; sourceTree = "<group>"; };
 		0A5A496410F28E0D0017275E /* lualib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lualib.h; path = Lua/src/lualib.h; sourceTree = "<group>"; };
 		0A5A496510F28E0D0017275E /* lundump.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lundump.c; path = Lua/src/lundump.c; sourceTree = "<group>"; };
@@ -113,6 +111,10 @@
 		0A5A496810F28E0D0017275E /* lvm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lvm.h; path = Lua/src/lvm.h; sourceTree = "<group>"; };
 		0A5A496910F28E0D0017275E /* lzio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lzio.c; path = Lua/src/lzio.c; sourceTree = "<group>"; };
 		0A5A496A10F28E0D0017275E /* lzio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lzio.h; path = Lua/src/lzio.h; sourceTree = "<group>"; };
+		0A5A49BE10F28FE80017275E /* Lunokhod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lunokhod.h; path = Source/Lunokhod.h; sourceTree = "<group>"; };
+		0A5A49BF10F28FE80017275E /* Lunokhod.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Lunokhod.m; path = Source/Lunokhod.m; sourceTree = "<group>"; };
+		0A5A49C910F291800017275E /* lua.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lua.c; path = Lua/src/lua.c; sourceTree = "<group>"; };
+		0A5A4A6E10F298F70017275E /* test.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test.lua; path = Source/test.lua; sourceTree = "<group>"; };
 		32A70AAB03705E1F00C91783 /* Lunokhod_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lunokhod_Prefix.pch; sourceTree = "<group>"; };
 		8DD76FA10486AA7600D96B5E /* Lunokhod */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Lunokhod; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6859EA3029092ED04C91782 /* Lunokhod.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Lunokhod.1; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				0A5A498B10F28E100017275E /* Lua */,
+				0A5A49B310F28FA20017275E /* Classes */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859EA2029092E104C91782 /* Documentation */,
 				08FB779DFE84155DC02AAC07 /* External Frameworks and Libraries */,
@@ -146,7 +149,7 @@
 			isa = PBXGroup;
 			children = (
 				32A70AAB03705E1F00C91783 /* Lunokhod_Prefix.pch */,
-				08FB7796FE84155DC02AAC07 /* Lunokhod.m */,
+				08FB7796FE84155DC02AAC07 /* Test.m */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -205,9 +208,8 @@
 				0A5A495D10F28E0D0017275E /* ltablib.c */,
 				0A5A495E10F28E0D0017275E /* ltm.c */,
 				0A5A495F10F28E0D0017275E /* ltm.h */,
-				0A5A496010F28E0D0017275E /* lua.c */,
 				0A5A496110F28E0D0017275E /* lua.h */,
-				0A5A496210F28E0D0017275E /* luac.c */,
+				0A5A49C910F291800017275E /* lua.c */,
 				0A5A496310F28E0D0017275E /* luaconf.h */,
 				0A5A496410F28E0D0017275E /* lualib.h */,
 				0A5A496510F28E0D0017275E /* lundump.c */,
@@ -218,6 +220,16 @@
 				0A5A496A10F28E0D0017275E /* lzio.h */,
 			);
 			name = Lua;
+			sourceTree = "<group>";
+		};
+		0A5A49B310F28FA20017275E /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				0A5A49BE10F28FE80017275E /* Lunokhod.h */,
+				0A5A49BF10F28FE80017275E /* Lunokhod.m */,
+				0A5A4A6E10F298F70017275E /* test.lua */,
+			);
+			name = Classes;
 			sourceTree = "<group>";
 		};
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
@@ -279,7 +291,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8DD76F9A0486AA7600D96B5E /* Lunokhod.m in Sources */,
+				8DD76F9A0486AA7600D96B5E /* Test.m in Sources */,
 				0A5A496B10F28E0D0017275E /* lapi.c in Sources */,
 				0A5A496C10F28E0D0017275E /* lauxlib.c in Sources */,
 				0A5A496D10F28E0D0017275E /* lbaselib.c in Sources */,
@@ -306,11 +318,11 @@
 				0A5A498210F28E0D0017275E /* ltable.c in Sources */,
 				0A5A498310F28E0D0017275E /* ltablib.c in Sources */,
 				0A5A498410F28E0D0017275E /* ltm.c in Sources */,
-				0A5A498510F28E0D0017275E /* lua.c in Sources */,
-				0A5A498610F28E0D0017275E /* luac.c in Sources */,
 				0A5A498710F28E0D0017275E /* lundump.c in Sources */,
 				0A5A498810F28E0D0017275E /* lvm.c in Sources */,
 				0A5A498910F28E0D0017275E /* lzio.c in Sources */,
+				0A5A49C010F28FE80017275E /* Lunokhod.m in Sources */,
+				0A5A49CA10F291800017275E /* lua.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +363,9 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_GC = required;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -365,6 +379,8 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_GC = required;
+				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
