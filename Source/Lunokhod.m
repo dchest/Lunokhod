@@ -113,7 +113,7 @@ static int lua_objc_lookup_class(lua_State *state)
     lua_objc_pushid(state, klass);    
   else
     lua_pushnil(state);
-	return 1;  
+  return 1;  
 }
 
 @implementation Lunokhod
