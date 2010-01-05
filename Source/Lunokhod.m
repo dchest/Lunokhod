@@ -52,6 +52,7 @@ static int lua_objc_callselector(lua_State *state)
   [inv getReturnValue:&result];
   lua_objc_pushid(state, result);
   return 1;
+  //TODO cache IMP?
 }
 
 static int lua_objc_id_tostring(lua_State *state)
@@ -66,7 +67,6 @@ static int lua_objc_pushselector(lua_State *state)
   SEL selector = NSSelectorFromString(LUSelectorNameFromLuaName(lua_tostring(state, -1)));
   SEL *p = lua_newuserdata(state, sizeof(SEL));
   *p = selector;
-  [[NSGarbageCollector defaultCollector] disableCollectorForPointer:selector];
   // Create metatable for selector
 	lua_newtable(state);
   lua_pushstring(state, "__call");
