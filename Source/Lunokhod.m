@@ -91,7 +91,7 @@ static void lua_objc_pushid(lua_State *state, id object)
   id *p = lua_newuserdata(state, sizeof(id));
   *p = object;
   // Create metatable for id
-	lua_newtable(state);
+  lua_newtable(state);
   lua_pushstring(state, "__index");
   lua_pushcfunction(state, lua_objc_pushselector);
   lua_settable(state, -3);
@@ -109,11 +109,10 @@ static void lua_objc_pushid(lua_State *state, id object)
 static int lua_objc_lookup_class(lua_State *state)
 {
   Class klass = NSClassFromString([NSString stringWithUTF8String:lua_tostring(state,-1)]);
-	if (klass != nil) {
-		lua_objc_pushid(state, klass);    
-  }
-	else
-		lua_pushnil(state);
+  if (klass != nil)
+    lua_objc_pushid(state, klass);    
+  else
+    lua_pushnil(state);
 	return 1;  
 }
 
@@ -125,9 +124,8 @@ static int lua_objc_lookup_class(lua_State *state)
     return nil;
   luaState_ = lua_open();
 
-  lua_gc(luaState_, LUA_GCSTOP, 0);  /* stop collector during initialization */
-  luaL_openlibs(luaState_);  /* open libraries */
-  lua_gc(luaState_, LUA_GCRESTART, 0);
+  lua_gc(luaState_, LUA_GCSTOP, 0);  // stop collector during initialization
+  luaL_openlibs(luaState_);  // open libraries
 
   // Table objc
   lua_newtable(luaState_);
@@ -142,12 +140,12 @@ static int lua_objc_lookup_class(lua_State *state)
   lua_settable(luaState_, -3);
   lua_setmetatable(luaState_, -2);
   // now we have class and our new table in stack
-
   // objc.class = {our table}
   lua_settable(luaState_, -3); 
   
   lua_setglobal(luaState_, "objc");
-  
+
+  lua_gc(luaState_, LUA_GCRESTART, 0); // restart collector  
   return self;
 }
 
@@ -173,7 +171,7 @@ static int lua_objc_lookup_class(lua_State *state)
   else {
     NSLog(@"Lunokhod error: unknown");
   }
-  [self doString:@"debug.traceback()"];
+  //[self doString:@"debug.traceback()"];
 }
 
 - (BOOL)loadFile:(NSString *)filename withFunctionName:(NSString *)functionName
@@ -211,7 +209,7 @@ static int lua_objc_lookup_class(lua_State *state)
 {
   if (luaL_loadstring(luaState_, [string UTF8String]) == 0) {
     // Push to stack as function
-    lua_setglobal(luaState_, [functionName UTF8String]);
+    lua_setglobal(luaState_, [functionName UTF8String]); 
     return YES;
   } else {
     [self logCurrentError];
