@@ -78,6 +78,8 @@ static id lua_objc_luatype_to_id(lua_State *L, int index)
   }
 }
 
+// Hacky defines
+
 #define set_arg(type, value, i, inv) \
           do { type v = (type)value; [inv setArgument:&v atIndex:i]; } while(0)
 
@@ -86,6 +88,9 @@ static id lua_objc_luatype_to_id(lua_State *L, int index)
                  lua_pushstring(L, [[NSString stringWithFormat:@"argument %d of method '%@' requires '%s', given '%s'.", index-2, NSStringFromSelector(selector), lua_typename(L, ltype), lua_typename(L, lua_type(L, index))] UTF8String]); \
                  lua_error(L); return 0; } \
           } while(0)
+
+#define get_return_value(type) \
+          type _value; [inv getReturnValue:&_value]
 
 static int lua_objc_callselector(lua_State *state)
 {
@@ -192,6 +197,14 @@ static int lua_objc_callselector(lua_State *state)
         ensure_lua_type(LUA_TNUMBER, state, index);
         set_arg(float, lua_tonumber(state, index), i, inv);
         break;
+      case LUA_OBJC_TYPE_STRING:
+        ensure_lua_type(LUA_TSTRING, state, index);
+        set_arg(const char*, lua_tostring(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_POINTER:
+        ensure_lua_type(LUA_TUSERDATA, state, index);
+        set_arg(void*, lua_touserdata(state, index), i, inv);
+        break;
       default: {
         NSString *error = [NSString stringWithFormat:@"argument %d of type '%s' is not supported (calling '%@' for object '%@').", i-1, [sig getArgumentTypeAtIndex:i], NSStringFromSelector(selector), [object description]];
         lua_pushstring(state, [error UTF8String]);
@@ -201,13 +214,93 @@ static int lua_objc_callselector(lua_State *state)
     i++;
     index++;
   }
-  [inv retainArguments];
+  [inv retainArguments];  
   
   [inv invoke];
-  //TODO convert non-id result to Lua type
-  id result = nil;
-  [inv getReturnValue:&result];
-  lua_objc_pushid(state, result);
+  
+  const char *returnType = [sig methodReturnType];
+  switch (returnType[0]) {
+    case LUA_OBJC_TYPE_CLASS:
+    case LUA_OBJC_TYPE_ID: {
+      get_return_value(id);
+      lua_objc_pushid(state, _value);
+      break;      
+    }
+    case LUA_OBJC_TYPE_CHAR: {
+      get_return_value(char);
+      lua_pushinteger(state, _value);
+    }
+    case LUA_OBJC_TYPE_UNSIGNED_CHAR: {
+      get_return_value(unsigned char);
+      lua_pushinteger(state, _value);
+    }
+    case LUA_OBJC_TYPE_C99_BOOL: {     
+      get_return_value(_Bool);
+      lua_pushboolean(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_SHORT: {
+      get_return_value(short);
+      lua_pushinteger(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_UNSIGNED_SHORT: {
+      get_return_value(unsigned short);
+      lua_pushinteger(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_INT: {
+      get_return_value(int);
+      lua_pushinteger(state, _value);      
+      break;
+    }
+    case LUA_OBJC_TYPE_UNSIGNED_INT: {      
+      get_return_value(unsigned int);
+      lua_pushinteger(state, _value);      
+      break;
+    }
+    case LUA_OBJC_TYPE_LONG: {
+      get_return_value(long);
+      lua_pushnumber(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_UNSIGNED_LONG: {
+      get_return_value(unsigned long);
+      lua_pushnumber(state, _value);      
+      break;
+    }
+    case LUA_OBJC_TYPE_LONG_LONG: {
+      get_return_value(long long);
+      lua_pushnumber(state, _value);      
+      break;
+    }
+    case LUA_OBJC_TYPE_UNSIGNED_LONG_LONG: {
+      get_return_value(unsigned long long);
+      lua_pushnumber(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_DOUBLE: {
+      get_return_value(double);
+      lua_pushnumber(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_FLOAT: {
+      get_return_value(float);
+      lua_pushnumber(state, _value);
+      break;
+    }
+    case LUA_OBJC_TYPE_STRING: {
+      const char *value = malloc([[inv methodSignature] methodReturnLength]);
+      [inv getReturnValue:&value];
+      lua_pushstring(state, value);
+      break;
+    }
+    default: {
+      NSString *error = [NSString stringWithFormat:@"unsupported return type '%s' (calling '%@' for object '%@').", returnType, NSStringFromSelector(selector), [object description]];
+      lua_pushstring(state, [error UTF8String]);
+      lua_error(state); return 0;
+    }
+  }
   return 1;
 }
 

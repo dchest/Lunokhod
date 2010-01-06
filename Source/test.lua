@@ -5,7 +5,7 @@ print(manager:currentDirectoryPath())
 print(manager:displayNameAtPath_("/Applications"))
 
 number = objc.class.NSNumber:numberWithInteger_(200)
-print(number:className(), number)
+print(number:className(), "(length=" .. number:className():length() .. ")", number)
 
 --[=[
 TODO
