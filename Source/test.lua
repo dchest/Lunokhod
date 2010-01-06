@@ -13,6 +13,7 @@ print(number:className(), "(length=" .. number:className():length() .. ")", numb
 for i=1,10000 do
   manager = objc.class.NSFileManager:defaultManager()
   manager:currentDirectoryPath()
+  manager:displayNameAtPath_("/Applications")
 end
 
 --[=[

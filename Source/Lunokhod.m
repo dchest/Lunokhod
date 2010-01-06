@@ -210,8 +210,6 @@ static int lua_objc_callselector(lua_State *state)
     i++;
     index++;
   }
-  [inv retainArguments];  
-  
   [inv invoke];
   
   // Convert return types
