@@ -119,7 +119,7 @@ static int lua_objc_callselector(lua_State *state)
   [inv setTarget:object];
   [inv setSelector:selector];
 
-  // Fill arguments
+  // Convert and fill arguments
   int i = 2;
   int index = 3;
   int numberOfArguments = [sig numberOfArguments];
@@ -218,6 +218,7 @@ static int lua_objc_callselector(lua_State *state)
   
   [inv invoke];
   
+  // Convert return types
   const char *returnType = [sig methodReturnType];
   switch (returnType[0]) {
     case LUA_OBJC_TYPE_CLASS:
