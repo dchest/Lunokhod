@@ -359,7 +359,7 @@ static void lua_objc_pushid(lua_State *state, id object)
 
 static int lua_objc_lookup_class(lua_State *state)
 {
-  Class klass = NSClassFromString([NSString stringWithUTF8String:lua_tostring(state,-1)]);
+  Class klass = objc_getClass(lua_tostring(state,-1));
   if (klass != nil)
     lua_objc_pushid(state, klass);    
   else
