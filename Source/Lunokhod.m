@@ -72,7 +72,7 @@ static id lua_objc_luatype_to_id(lua_State *L, int index)
       return *userdata;
     }
     default:
-      lua_pushstring(L, "cannot convert Lua type to Objective-C type");
+      lua_pushstring(L, [[NSString stringWithFormat:@"converting Lua type '%s' to Objective-C type is not supported.", lua_typename(L, lua_type(L, index))] UTF8String]);
       lua_error(L);
       return nil;
   }
