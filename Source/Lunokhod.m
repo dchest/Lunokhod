@@ -116,99 +116,104 @@ static int lua_objc_callselector(lua_State *state)
   [inv setSelector:selector];
 
   // Convert and fill arguments
-  int i = 2;
-  int index = 3;
+  int objcIndex = 2;
+  int luaIndex = 3;
   int numberOfArguments = [sig numberOfArguments];
   
-  while (i < numberOfArguments && !lua_isnil(state, index)) {
+  while (objcIndex < numberOfArguments) {
 
-    switch ([sig getArgumentTypeAtIndex:i][0]) {
+    if (lua_isnil(state, luaIndex)) {
+      [inv setArgument:nil atIndex:objcIndex];
+      continue;
+    }
+    
+    switch ([sig getArgumentTypeAtIndex:objcIndex][0]) {
       case LUA_OBJC_TYPE_ID:
       case LUA_OBJC_TYPE_CLASS: {
-        id obj = lua_objc_luatype_to_id(state, index);
-        [inv setArgument:&obj atIndex:i];
+        id obj = lua_objc_luatype_to_id(state, luaIndex);
+        [inv setArgument:&obj atIndex:objcIndex];
         break;
       }
       case LUA_OBJC_TYPE_CHAR: {
-        switch(lua_type(state, index)) {
-          case LUA_TBOOLEAN: set_arg(char, (char)lua_toboolean(state, index), i, inv); break;
-          case LUA_TNUMBER: set_arg(char, (char)lua_tointeger(state, index), i, inv); break;
+        switch(lua_type(state, luaIndex)) {
+          case LUA_TBOOLEAN: set_arg(char, (char)lua_toboolean(state, luaIndex), objcIndex, inv); break;
+          case LUA_TNUMBER: set_arg(char, (char)lua_tointeger(state, luaIndex), objcIndex, inv); break;
           default: 
-            ensure_lua_type(LUA_TBOOLEAN, state, index);
-            ensure_lua_type(LUA_TNUMBER, state, index);
+            ensure_lua_type(LUA_TBOOLEAN, state, luaIndex);
+            ensure_lua_type(LUA_TNUMBER, state, luaIndex);
         }
         break;
       }
       case LUA_OBJC_TYPE_UNSIGNED_CHAR: {
-        switch(lua_type(state, index)) {
-          case LUA_TBOOLEAN: set_arg(unsigned char, (unsigned char)lua_toboolean(state, index), i, inv); break;
-          case LUA_TNUMBER: set_arg(unsigned char, (unsigned char)lua_tointeger(state, index), i, inv); break;
+        switch(lua_type(state, luaIndex)) {
+          case LUA_TBOOLEAN: set_arg(unsigned char, (unsigned char)lua_toboolean(state, luaIndex), objcIndex, inv); break;
+          case LUA_TNUMBER: set_arg(unsigned char, (unsigned char)lua_tointeger(state, luaIndex), objcIndex, inv); break;
           default:
-            ensure_lua_type(LUA_TBOOLEAN, state, index);
-            ensure_lua_type(LUA_TNUMBER, state, index);
+            ensure_lua_type(LUA_TBOOLEAN, state, luaIndex);
+            ensure_lua_type(LUA_TNUMBER, state, luaIndex);
         }
         break;
       }
       case LUA_OBJC_TYPE_C99_BOOL:
-        ensure_lua_type(LUA_TBOOLEAN, state, index);
-        set_arg(_Bool, lua_toboolean(state, index), i, inv);
+        ensure_lua_type(LUA_TBOOLEAN, state, luaIndex);
+        set_arg(_Bool, lua_toboolean(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_SHORT:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(short, lua_tointeger(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(short, lua_tointeger(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_UNSIGNED_SHORT:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(unsigned short, lua_tointeger(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(unsigned short, lua_tointeger(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_INT:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(int, lua_tointeger(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(int, lua_tointeger(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_UNSIGNED_INT:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(unsigned int, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(unsigned int, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_LONG:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(long, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(long, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_UNSIGNED_LONG:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(unsigned long, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(unsigned long, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_LONG_LONG:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(long long, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(long long, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_UNSIGNED_LONG_LONG:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(unsigned long long, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(unsigned long long, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_DOUBLE:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(double, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(double, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_FLOAT:
-        ensure_lua_type(LUA_TNUMBER, state, index);
-        set_arg(float, lua_tonumber(state, index), i, inv);
+        ensure_lua_type(LUA_TNUMBER, state, luaIndex);
+        set_arg(float, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_STRING:
-        ensure_lua_type(LUA_TSTRING, state, index);
-        set_arg(const char*, lua_tostring(state, index), i, inv);
+        ensure_lua_type(LUA_TSTRING, state, luaIndex);
+        set_arg(const char*, lua_tostring(state, luaIndex), objcIndex, inv);
         break;
       case LUA_OBJC_TYPE_POINTER:
-        ensure_lua_type(LUA_TUSERDATA, state, index);
-        set_arg(void*, lua_touserdata(state, index), i, inv);
+        ensure_lua_type(LUA_TUSERDATA, state, luaIndex);
+        set_arg(void*, lua_touserdata(state, luaIndex), objcIndex, inv);
         break;
       default: {
-        NSString *error = [NSString stringWithFormat:@"argument %d of type '%s' is not supported (calling '%@' for object '%@').", i-1, [sig getArgumentTypeAtIndex:i], NSStringFromSelector(selector), [object description]];
+        NSString *error = [NSString stringWithFormat:@"argument %d of type '%s' is not supported (calling '%@' for object '%@').", objcIndex-1, [sig getArgumentTypeAtIndex:objcIndex], NSStringFromSelector(selector), [object description]];
         lua_pushstring(state, [error UTF8String]);
         lua_error(state); return 0;
       }
     }    
-    i++;
-    index++;
+    objcIndex++;
+    luaIndex++;
   }
   [inv invoke];
   
