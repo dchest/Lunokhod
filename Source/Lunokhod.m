@@ -321,6 +321,7 @@ static int lua_objc_pushselector(lua_State *state)
   }
   SEL *selptr = lua_newuserdata(state, sizeof(SEL));
   *selptr = sel_registerName(selName);
+  free(selName);
   // Create metatable for selector
 	lua_newtable(state);
   lua_pushstring(state, "__call");
