@@ -33,7 +33,7 @@ static int lua_objc_callselector(lua_State *state)
 
   NSMethodSignature *sig = [object methodSignatureForSelector:selector];
   if (!sig) {
-    NSString *error = [NSString stringWithFormat:@"Method not found: %@.", NSStringFromSelector(selector)];
+    NSString *error = [NSString stringWithFormat:@"method '%@' not found in object '%@'.", NSStringFromSelector(selector), [object description]];
     lua_pushstring(state, [error UTF8String]);
     lua_error(state);
   }
