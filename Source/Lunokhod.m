@@ -10,12 +10,82 @@
 #import "lauxlib.h"
 #import "lualib.h"
 
+#define LUA_OBJC_TYPE_BITFIELD 'b'
+#define LUA_OBJC_TYPE_C99_BOOL 'B'
+#define LUA_OBJC_TYPE_CHAR 'c'
+#define LUA_OBJC_TYPE_UNSIGNED_CHAR 'C'
+#define LUA_OBJC_TYPE_DOUBLE 'd'
+#define LUA_OBJC_TYPE_FLOAT 'f'
+#define LUA_OBJC_TYPE_INT 'i'
+#define LUA_OBJC_TYPE_UNSIGNED_INT 'I'
+#define LUA_OBJC_TYPE_LONG 'l'
+#define LUA_OBJC_TYPE_UNSIGNED_LONG 'L'
+#define LUA_OBJC_TYPE_LONG_LONG 'q'
+#define LUA_OBJC_TYPE_UNSIGNED_LONG_LONG 'Q'
+#define LUA_OBJC_TYPE_SHORT 's'
+#define LUA_OBJC_TYPE_UNSIGNED_SHORT 'S'
+#define LUA_OBJC_TYPE_VOID 'v'
+#define LUA_OBJC_TYPE_UNKNOWN '?'
+
+#define LUA_OBJC_TYPE_ID '@'
+#define LUA_OBJC_TYPE_CLASS '#'
+#define LUA_OBJC_TYPE_POINTER '^'
+#define LUA_OBJC_TYPE_STRING '*'
+
+#define LUA_OBJC_TYPE_UNION '('
+#define LUA_OBJC_TYPE_UNION_END ')'
+#define LUA_OBJC_TYPE_ARRAY '['
+#define LUA_OBJC_TYPE_ARRAY_END ']'
+#define LUA_OBJC_TYPE_STRUCT '{'
+#define LUA_OBJC_TYPE_STRUCT_END '}'
+#define LUA_OBJC_TYPE_SELECTOR ':'
+
+#define LUA_OBJC_TYPE_IN 'n'
+#define LUA_OBJC_TYPE_INOUT 'N'
+#define LUA_OBJC_TYPE_OUT 'o'
+#define LUA_OBJC_TYPE_BYCOPY 'O'
+#define LUA_OBJC_TYPE_CONST 'r'
+#define LUA_OBJC_TYPE_BYREF 'R'
+#define LUA_OBJC_TYPE_ONEWAY 'V'
+
+
 NSString *LUSelectorNameFromLuaName(const char *name)
 {
   return [[NSString stringWithUTF8String:name] stringByReplacingOccurrencesOfString:@"_" withString:@":"];
 }
 
 static void lua_objc_pushid(lua_State *state, id object);
+
+static id lua_objc_luatype_to_id(lua_State *L, int index) 
+{
+  switch (lua_type(L, index)) {
+    case LUA_TNIL:
+      return [NSNull null];
+    case LUA_TNUMBER:
+      return [NSNumber numberWithDouble:lua_tonumber(L, index)];
+    case LUA_TBOOLEAN:
+      return [NSNumber numberWithBool:(BOOL)lua_toboolean(L, index)];
+    case LUA_TSTRING:
+      return [NSString stringWithUTF8String:lua_tostring(L, index)];
+    case LUA_TUSERDATA: {
+      id *userdata = lua_touserdata(L, index);
+      return *userdata;
+    }
+    default:
+      lua_pushstring(L, "cannot convert Lua type to Objective-C type");
+      lua_error(L);
+      return nil;
+  }
+}
+
+#define set_arg(type, value, i, inv) \
+          do { type v = (type)value; [inv setArgument:&v atIndex:i]; } while(0)
+
+#define ensure_lua_type(ltype, L, index) \
+          do { if (lua_type(L, index) != ltype) { \
+                 lua_pushstring(L, [[NSString stringWithFormat:@"argument %d of method '%@' requires '%s', given '%s'.", index-2, NSStringFromSelector(selector), lua_typename(L, ltype), lua_typename(L, lua_type(L, index))] UTF8String]); \
+                 lua_error(L); return 0; } \
+          } while(0)
 
 static int lua_objc_callselector(lua_State *state)
 {
@@ -28,31 +98,117 @@ static int lua_objc_callselector(lua_State *state)
     NSString *error = [NSString stringWithFormat:@"arguments for '%@' require object (use ':' instead of '.' to call methods).", NSStringFromSelector(selector)];
     lua_pushstring(state, [error UTF8String]);
     lua_error(state);
+    return 0;
   }  
   id object = *objptr;
-
+  
   NSMethodSignature *sig = [object methodSignatureForSelector:selector];
   if (!sig) {
     NSString *error = [NSString stringWithFormat:@"method '%@' not found in object '%@'.", NSStringFromSelector(selector), [object description]];
     lua_pushstring(state, [error UTF8String]);
     lua_error(state);
+    return 0;
   }
 
   NSInvocation *inv = [NSInvocation invocationWithMethodSignature:sig];
   [inv setTarget:object];
   [inv setSelector:selector];
-//  int i = 2;
-//  for (id argument in arguments) {
-//    [inv setArgument:&argument atIndex:i];
-//    i++;
-//  }
-//  [inv retainArguments];
+
+  // Fill arguments
+  int i = 2;
+  int index = 3;
+  int numberOfArguments = [sig numberOfArguments];
+  
+  while (i < numberOfArguments && !lua_isnil(state, index)) {
+
+    switch ([sig getArgumentTypeAtIndex:i][0]) {
+      case LUA_OBJC_TYPE_ID:
+      case LUA_OBJC_TYPE_CLASS: {
+        id obj = lua_objc_luatype_to_id(state, index);
+        [inv setArgument:&obj atIndex:i];
+        break;
+      }
+      case LUA_OBJC_TYPE_CHAR: {
+        switch(lua_type(state, index)) {
+          case LUA_TBOOLEAN: set_arg(char, (char)lua_toboolean(state, index), i, inv); break;
+          case LUA_TNUMBER: set_arg(char, (char)lua_tointeger(state, index), i, inv); break;
+          default: 
+            ensure_lua_type(LUA_TBOOLEAN, state, index);
+            ensure_lua_type(LUA_TNUMBER, state, index);
+        }
+        break;
+      }
+      case LUA_OBJC_TYPE_UNSIGNED_CHAR: {
+        switch(lua_type(state, index)) {
+          case LUA_TBOOLEAN: set_arg(unsigned char, (unsigned char)lua_toboolean(state, index), i, inv); break;
+          case LUA_TNUMBER: set_arg(unsigned char, (unsigned char)lua_tointeger(state, index), i, inv); break;
+          default:
+            ensure_lua_type(LUA_TBOOLEAN, state, index);
+            ensure_lua_type(LUA_TNUMBER, state, index);
+        }
+        break;
+      }
+      case LUA_OBJC_TYPE_C99_BOOL:
+        ensure_lua_type(LUA_TBOOLEAN, state, index);
+        set_arg(_Bool, lua_toboolean(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_SHORT:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(short, lua_tointeger(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_UNSIGNED_SHORT:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(unsigned short, lua_tointeger(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_INT:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(int, lua_tointeger(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_UNSIGNED_INT:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(unsigned int, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_LONG:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(long, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_UNSIGNED_LONG:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(unsigned long, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_LONG_LONG:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(long long, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_UNSIGNED_LONG_LONG:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(unsigned long long, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_DOUBLE:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(double, lua_tonumber(state, index), i, inv);
+        break;
+      case LUA_OBJC_TYPE_FLOAT:
+        ensure_lua_type(LUA_TNUMBER, state, index);
+        set_arg(float, lua_tonumber(state, index), i, inv);
+        break;
+      default: {
+        NSString *error = [NSString stringWithFormat:@"argument %d of type '%s' is not supported (calling '%@' for object '%@').", i-1, [sig getArgumentTypeAtIndex:i], NSStringFromSelector(selector), [object description]];
+        lua_pushstring(state, [error UTF8String]);
+        lua_error(state); return 0;
+      }
+    }    
+    i++;
+    index++;
+  }
+  [inv retainArguments];
+  
   [inv invoke];
+  //TODO convert non-id result to Lua type
   id result = nil;
   [inv getReturnValue:&result];
   lua_objc_pushid(state, result);
   return 1;
-  //TODO cache IMP?
 }
 
 static int lua_objc_id_tostring(lua_State *state)
