@@ -9,6 +9,7 @@
 #import "Lunokhod.h"
 #import "lauxlib.h"
 #import "lualib.h"
+#import <ObjC/runtime.h>
 
 #define LUA_OBJC_TYPE_BITFIELD 'b'
 #define LUA_OBJC_TYPE_C99_BOOL 'B'
@@ -48,11 +49,6 @@
 #define LUA_OBJC_TYPE_BYREF 'R'
 #define LUA_OBJC_TYPE_ONEWAY 'V'
 
-
-NSString *LUSelectorNameFromLuaName(const char *name)
-{
-  return [[NSString stringWithUTF8String:name] stringByReplacingOccurrencesOfString:@"_" withString:@":"];
-}
 
 static void lua_objc_pushid(lua_State *state, id object);
 
@@ -314,9 +310,14 @@ static int lua_objc_id_tostring(lua_State *state)
 
 static int lua_objc_pushselector(lua_State *state)
 {
-  SEL selector = NSSelectorFromString(LUSelectorNameFromLuaName(lua_tostring(state, -1)));
-  SEL *p = lua_newuserdata(state, sizeof(SEL));
-  *p = selector;
+  // Convert selector name from one_two_three_ to one:two:three:
+  char *selName = strdup(lua_tostring(state, -1));
+  for (int i = 0; selName[i] != '\0'; i++) {
+    if (selName[i] == '_')
+      selName[i] = ':';
+  }
+  SEL *selptr = lua_newuserdata(state, sizeof(SEL));
+  *selptr = sel_registerName(selName);
   // Create metatable for selector
 	lua_newtable(state);
   lua_pushstring(state, "__call");
