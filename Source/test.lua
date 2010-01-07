@@ -42,7 +42,9 @@ MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
   
 a = MySubClass:alloc():init()
 a:testMe()
-a:testMe()
+for i=1,1000 do
+  a:testMe()
+end
 
 --print(MyClass:description())
 

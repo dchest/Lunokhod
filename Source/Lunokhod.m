@@ -49,6 +49,8 @@
 #define LUA_OBJC_TYPE_BYREF 'R'
 #define LUA_OBJC_TYPE_ONEWAY 'V'
 
+
+//  We create (and add to registeredClasses) the following proxy objects for every class created in Lua to get luaState when resolving methods
 @interface LuaObjcClassProxy : NSObject
 {
 @public
@@ -69,6 +71,8 @@
 }
 
 @end
+
+// Used to keep track of classes created in Lua. 
 
 static NSMapTable *registeredClasses = nil;
 
