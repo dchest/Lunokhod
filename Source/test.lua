@@ -8,13 +8,43 @@ print(manager:displayNameAtPath_("/Applications"))
 number = objc.class.NSNumber:numberWithInteger_(200)
 print(number:className(), "(length=" .. number:className():length() .. ")", number)
 
---]]
-
-for i=1,10000 do
+for i=1,20000 do
   manager = objc.class.NSFileManager:defaultManager()
   manager:currentDirectoryPath()
-  manager:displayNameAtPath_("/Applications")
+  manager:displayNameAtPath_("/Applications"):length()
 end
+--]]
+
+
+MyClass = objc.new_class("MyClass", objc.class.NSObject, 
+  function (class) -- class initialization 
+    print ("Class initialization")
+    
+    objc.add_method(class, "testMe", "v@:", function (self) print "\n=====YES!====\n" end)
+    
+  end
+)
+
+print "\n"
+for k,v in pairs(__LUNOKHOD_DISPATCH) do
+  print("-->", k,v)
+  for k2, v2 in pairs(v) do
+    print("\t->", k2, v2)
+  end
+end
+
+MyClass:alloc():init():testMe()
+
+MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
+  function (class)
+    print ("initing subclass")
+  end)
+  
+a = MySubClass:alloc():init()
+a:testMe()
+a:testMe()
+
+--print(MyClass:description())
 
 --[=[
 TODO

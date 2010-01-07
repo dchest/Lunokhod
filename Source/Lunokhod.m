@@ -49,6 +49,28 @@
 #define LUA_OBJC_TYPE_BYREF 'R'
 #define LUA_OBJC_TYPE_ONEWAY 'V'
 
+@interface LuaObjcClassProxy : NSObject
+{
+@public
+  Class originalClass;
+  lua_State *luaState;
+}
+@end
+
+@implementation LuaObjcClassProxy
+
+- (id)initWithClass:(Class)klass luaState:(lua_State *)state
+{
+  if (![super init])
+    return nil;
+  originalClass = klass;
+  luaState = state;
+  return self;
+}
+
+@end
+
+static NSMapTable *registeredClasses = nil;
 
 static void lua_objc_pushid(lua_State *state, id object);
 
@@ -74,6 +96,15 @@ static id lua_objc_luatype_to_id(lua_State *L, int index)
   }
 }
 
+static id lua_objc_toid(lua_State *state, int index)
+{
+  id *objptr = lua_touserdata(state, index);
+  if (!objptr)
+    return nil;
+  else
+    return *objptr;
+}
+
 // Hacky defines
 
 #define set_arg(type, value, i, inv) \
@@ -93,16 +124,15 @@ static int lua_objc_callselector(lua_State *state)
   SEL *selptr = lua_touserdata(state, 1);
   SEL selector = *selptr;
 
-  id *objptr = lua_touserdata(state, 2);
-  if (!objptr) {
+  id object = lua_objc_toid(state, 2);
+  if (!object) {
     // Second argument is nil, so there was no object, and the objptr is actually a selector
     NSString *error = [NSString stringWithFormat:@"arguments for '%@' require object (use ':' instead of '.' to call methods).", NSStringFromSelector(selector)];
     lua_pushstring(state, [error UTF8String]);
     lua_error(state);
     return 0;
   }  
-  id object = *objptr;
-  
+    
   NSMethodSignature *sig = [object methodSignatureForSelector:selector];
   if (!sig) {
     NSString *error = [NSString stringWithFormat:@"method '%@' not found in object '%@'.", NSStringFromSelector(selector), [object description]];
@@ -119,7 +149,7 @@ static int lua_objc_callselector(lua_State *state)
   int objcIndex = 2;
   int luaIndex = 3;
   int numberOfArguments = [sig numberOfArguments];
-  
+
   while (objcIndex < numberOfArguments) {
 
     if (lua_isnil(state, luaIndex)) {
@@ -216,7 +246,7 @@ static int lua_objc_callselector(lua_State *state)
     luaIndex++;
   }
   [inv invoke];
-  
+
   // Convert return types
   const char *returnType = [sig methodReturnType];
   switch (returnType[0]) {
@@ -295,6 +325,8 @@ static int lua_objc_callselector(lua_State *state)
       lua_pushstring(state, value);
       break;
     }
+    case LUA_OBJC_TYPE_VOID:
+      return 0; // no return
     default: {
       NSString *error = [NSString stringWithFormat:@"unsupported return type '%s' (calling '%@' for object '%@').", returnType, NSStringFromSelector(selector), [object description]];
       lua_pushstring(state, [error UTF8String]);
@@ -306,26 +338,60 @@ static int lua_objc_callselector(lua_State *state)
 
 static int lua_objc_id_tostring(lua_State *state)
 {
-  id *objptr = lua_touserdata(state, -1);
-  lua_pushstring(state, [[*objptr description] UTF8String]);
+  id object = lua_objc_toid(state, -1);
+  lua_pushstring(state, [[object description] UTF8String]);
   return 1;
+}
+
+static int lua_objc_direct_call(lua_State *state)
+{
+  SEL *selptr = lua_touserdata(state, 1);
+  SEL selector = *selptr;
+  id object = lua_objc_toid(state, 2);
+  if (!object) {
+    // Second argument is nil, so there was no object, and the objptr is actually a selector
+    NSString *error = [NSString stringWithFormat:@"arguments for '%@' require object (use ':' instead of '.' to call methods).", NSStringFromSelector(selector)];
+    lua_pushstring(state, [error UTF8String]);
+    lua_error(state);
+    return 0;
+  }  
+  if (![object respondsToSelector:selector]) {
+    NSString *error = [NSString stringWithFormat:@"method '%@' not found in object '%@'.", NSStringFromSelector(selector), [object description]];
+    lua_pushstring(state, [error UTF8String]);
+    lua_error(state);
+    return 0;
+  }
+  IMP imp = [object methodForSelector:selector];
+  return (NSInteger)imp(object, selector, state);
 }
 
 static int lua_objc_pushselector(lua_State *state)
 {
-  // Convert selector name from one_two_three_ to one:two:three:
   char *selName = strdup(lua_tostring(state, -1));
-  for (int i = 0; selName[i] != '\0'; i++) {
-    if (selName[i] == '_')
-      selName[i] = ':';
+  BOOL isDirectCall = NO;
+  
+  if (selName[0] == 'l' && selName[1] == 'u' && selName[2] == 'a' && selName[3] == '_') {
+    // Selectors in format lua_something_() will be handled by lua_objec_direct_call(), which calls [obj lua_something:lua_State]
+    isDirectCall = YES;
+    selName[strlen(selName)-1] = ':';
+  } else {
+    // Convert selector name from one_two_three_ to one:two:three:
+    for (int i = 0; selName[i] != '\0'; i++) {
+      if (selName[i] == '_')
+        selName[i] = ':';
+    }
   }
+
   SEL *selptr = lua_newuserdata(state, sizeof(SEL));
   *selptr = sel_registerName(selName);
   free(selName);
   // Create metatable for selector
 	lua_newtable(state);
   lua_pushstring(state, "__call");
-  lua_pushcfunction(state, lua_objc_callselector);
+  if (!isDirectCall)
+    lua_pushcfunction(state, lua_objc_callselector);
+  else
+    lua_pushcfunction(state, lua_objc_direct_call);
   lua_settable(state, -3);
   lua_setmetatable(state, -2);
   return 1;
@@ -371,12 +437,86 @@ static int lua_objc_lookup_class(lua_State *state)
   return 1;  
 }
 
+static int lua_objc_new_class(lua_State *state)
+{
+  const char *className = lua_tostring(state, 1);
+  NSLog(@"#debug: registering new class %s", className);
+  Class superclass = lua_objc_toid(state, 2);
+  NSLog(@"#debug: superclass %@", [superclass description]);
+  Class klass = objc_allocateClassPair(superclass, className, 0);
+  if (!klass) {
+    lua_pushfstring(state, "class %s cannot be created (probably it already exists).", className);
+    lua_error(state); return 0;
+  }
+  // Register class in function dispatch
+  lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+  lua_pushstring(state, className);
+  lua_newtable(state);
+  lua_settable(state, -3);
+
+  // Call initialization function (3rd argument to this function)
+  lua_pushvalue(state, 3);
+  lua_objc_pushid(state, klass);
+  lua_call(state, 1, 0);
+  objc_registerClassPair(klass);
+  // Register proxy for klass
+  LuaObjcClassProxy *proxy = [[LuaObjcClassProxy alloc] initWithClass:klass luaState:state];
+  [registeredClasses setObject:proxy forKey:klass];
+
+  lua_objc_pushid(state, klass);
+  return 1;
+}
+
+id invokeLuaFunction(id self, SEL _cmd, ...)
+{
+  LuaObjcClassProxy *proxy = [registeredClasses objectForKey:[self class]];
+  if (proxy == nil) {
+    NSLog(@"no proxy for %@", [self class]);
+    return 0;
+  }
+  lua_State *state = proxy->luaState;
+  id obj = self;
+  do {
+    lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+    lua_pushstring(state, [[obj className] UTF8String]);
+    lua_gettable(state, -2);
+    lua_getfield(state, -1, [NSStringFromSelector(_cmd) UTF8String]);
+    if (!lua_isnil(state, -1))
+      break;
+  } while ((obj = [obj superclass]) != nil); // locate method in superclass
+
+  lua_objc_pushid(state, self);  
+  lua_call(state, 1, 0);
+  return nil;
+}
+
+static int lua_objc_add_method(lua_State *state)
+{
+  Class klass = lua_objc_toid(state, 1);
+  const char *selName = lua_tostring(state, 2);
+  NSLog(@"registering in %s, %s", class_getName(klass), selName);
+  class_addMethod(klass, sel_registerName(selName), invokeLuaFunction, lua_tostring(state, 3));
+  lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+  lua_pushstring(state, class_getName(klass));
+  lua_gettable(state, -2);
+  lua_pushfstring(state, "%s", selName);
+  lua_pushvalue(state, 4);
+  lua_settable(state, -3);
+  return 0;
+}
+
 @implementation Lunokhod
 
 - (id)init
 {
   if (![super init])
     return nil;
+  
+  
+  if (!registeredClasses) {
+    registeredClasses = [[NSMapTable alloc] init];
+  }
+  
   luaState_ = lua_open();
 
   lua_gc(luaState_, LUA_GCSTOP, 0);  // stop collector during initialization
@@ -397,8 +537,19 @@ static int lua_objc_lookup_class(lua_State *state)
   // now we have class and our new table in stack
   // objc.class = {our table}
   lua_settable(luaState_, -3); 
+
+  lua_pushstring(luaState_, "new_class");
+  lua_pushcfunction(luaState_, lua_objc_new_class);
+  lua_settable(luaState_, -3);
+
+  lua_pushstring(luaState_, "add_method");
+  lua_pushcfunction(luaState_, lua_objc_add_method);
+  lua_settable(luaState_, -3);
   
   lua_setglobal(luaState_, "objc");
+
+  lua_newtable(luaState_);
+  lua_setglobal(luaState_, "__LUNOKHOD_DISPATCH");
 
   lua_gc(luaState_, LUA_GCRESTART, 0); // restart collector  
   return self;
@@ -406,6 +557,7 @@ static int lua_objc_lookup_class(lua_State *state)
 
 - (void)dealloc
 {
+  [registeredClasses release];
   lua_gc(luaState_, LUA_GCCOLLECT, 0);
   lua_close(luaState_);
   [super dealloc];
