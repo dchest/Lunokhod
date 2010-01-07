@@ -7,9 +7,7 @@ int main (int argc, const char * argv[])
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
   Lunokhod *lun = [[Lunokhod alloc] init];
-  
-  [NSApplication sharedApplication];
-  
+    
   NSString *path = [[[[NSString stringWithUTF8String:argv[0]] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
   
   NSString *filename = [path stringByAppendingPathComponent:@"Source/test.lua"];
