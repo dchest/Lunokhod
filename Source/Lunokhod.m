@@ -153,7 +153,8 @@ static int lua_objc_callselector(lua_State *state)
   int objcIndex = 2;
   int luaIndex = 3;
   int numberOfArguments = [sig numberOfArguments];
-
+  void *buffer = NULL; // for array and struct
+  
   while (objcIndex < numberOfArguments) {
 
     if (lua_isnil(state, luaIndex)) {
@@ -240,6 +241,15 @@ static int lua_objc_callselector(lua_State *state)
         ensure_lua_type(LUA_TUSERDATA, state, luaIndex);
         set_arg(void*, lua_touserdata(state, luaIndex), objcIndex, inv);
         break;
+      case LUA_OBJC_TYPE_ARRAY:
+      case LUA_OBJC_TYPE_STRUCT:
+      case LUA_OBJC_TYPE_SELECTOR:
+        ensure_lua_type(LUA_TUSERDATA, state, luaIndex);
+        NSUInteger length = [sig frameLength];
+        buffer = malloc(length);
+        memcpy(buffer, lua_touserdata(state, luaIndex), length);
+        [inv setArgument:buffer atIndex:objcIndex];
+        break;
       default: {
         NSString *error = [NSString stringWithFormat:@"argument %d of type '%s' is not supported (calling '%@' for object '%@').", objcIndex-1, [sig getArgumentTypeAtIndex:objcIndex], NSStringFromSelector(selector), [object description]];
         lua_pushstring(state, [error UTF8String]);
@@ -250,6 +260,9 @@ static int lua_objc_callselector(lua_State *state)
     luaIndex++;
   }
   [inv invoke];
+
+  if (buffer != NULL)
+    free(buffer);
 
   // Convert return types
   const char *returnType = [sig methodReturnType];
@@ -469,6 +482,17 @@ static int lua_objc_new_class(lua_State *state)
   return 1;
 }
 
+static int lua_objc_rect(lua_State *state)
+{
+  CGFloat x = lua_tonumber(state, 1);
+  CGFloat y = lua_tonumber(state, 2);
+  CGFloat w = lua_tonumber(state, 3);
+  CGFloat h = lua_tonumber(state, 4);
+  NSRect rect = NSMakeRect(x, y, w, h);
+  void *p = lua_newuserdata(state, sizeof(rect));
+  memcpy(p, &rect, sizeof(rect));
+  return 1;
+}
 
 // Finds Lua function for ObjC method and pushes it on top of stack
 void find_lua_function_for_method(lua_State *state, id obj, SEL selector)
@@ -654,6 +678,10 @@ static int lua_objc_add_method(lua_State *state)
 
   lua_pushstring(luaState_, "add_method");
   lua_pushcfunction(luaState_, lua_objc_add_method);
+  lua_settable(luaState_, -3);
+
+  lua_pushstring(luaState_, "rect");
+  lua_pushcfunction(luaState_, lua_objc_rect);
   lua_settable(luaState_, -3);
   
   lua_setglobal(luaState_, "objc");

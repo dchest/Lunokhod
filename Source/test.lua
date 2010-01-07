@@ -46,4 +46,38 @@ sub = MySubClass:alloc():init()
 sub:testMe()
 print(sub:secondTest_and_also_(10, 20, "from lua"))
 
+--[[
+-- test Cocoa
+print("-----------------------------------------------")
 
+app = objc.class.NSApplication:sharedApplication()
+
+win = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
+  objc.rect(0, 0, 300, 200), 
+  15, -- NSTitledWindowMask|NSClosableWindowMask|NSMiniaturizableWindowMask|NSResizableWindowMask
+  2,  -- NSBackingStoreBuffered
+  false)
+win:setTitle_('Hello World')
+
+button = objc.class.NSButton:alloc():initWithFrame_(objc.rect(0,0,200,200))
+win:contentView():addSubview_(button)
+button:setBezelStyle_(1) -- NSRoundedBezelStyle
+button:setTitle_('Hello!')
+--button:sizeToFit()
+
+button_controller = objc.new_class("ButtonController", objc.class.NSObject,
+                      function (class)
+                        objc.add_method(class, "sayHello:", "@@:@",
+                          function (sender)
+                            print("Hello, world!")
+                          end)
+                      end):alloc():init()
+button:setTarget_(button_controller)
+button:setAction_(button_controller.sayHello_)
+
+win:display()
+win:makeKeyAndOrderFront_(win)
+app:activateIgnoringOtherApps_(1)
+app:run()
+
+--]]
