@@ -20,7 +20,8 @@ MyClass = objc.new_class("MyClass", objc.class.NSObject,
   function (class) -- class initialization 
     print ("Class initialization")
     
-    objc.add_method(class, "testMe", "v@:", function (self) print "\n=====YES!====\n" end)
+    objc.add_method(class, "testMe", "v@:", function (self) print "\n= 1st test =\n" end)
+    objc.add_method(class, "secondTest", "v@:", function (self) print(self, "\n= Second test =\n") end)
     
   end
 )
@@ -42,9 +43,11 @@ MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
   
 a = MySubClass:alloc():init()
 a:testMe()
-for i=1,1000 do
+for i=1,4 do
   a:testMe()
 end
+a:secondTest()
+MyClass:alloc():init():secondTest()
 
 --print(MyClass:description())
 

@@ -487,7 +487,7 @@ id invokeLuaFunction(id self, SEL _cmd, ...)
     lua_getfield(state, -1, [NSStringFromSelector(_cmd) UTF8String]);
     if (!lua_isnil(state, -1))
       break;
-  } while ((obj = [obj superclass]) != nil); // locate method in superclass
+  } while ((obj = [obj superclass]) != nil && ![obj isMemberOfClass:[NSObject class]]); // locate method in superclass
 
   lua_objc_pushid(state, self);  
   lua_call(state, 1, 0);
