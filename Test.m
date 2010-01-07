@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import "Lunokhod.h"
 
-
 int main (int argc, const char * argv[]) 
 {
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
@@ -15,8 +14,12 @@ int main (int argc, const char * argv[])
   if ([lun loadFile:filename withFunctionName:@"objc_test"]) {
     [lun doString:@"objc_test()"];    
   }
-  [lun release];
   
+  id a = [[NSClassFromString(@"MySubClass") alloc] init];
+  NSLog(@"return: %@", [a secondTest:10 and:20.0 also:@"test"]);
+
+  [lun release];
+
   [pool drain];
   return 0;
 }

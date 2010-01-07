@@ -135,8 +135,8 @@ static int lua_objc_callselector(lua_State *state)
     lua_pushstring(state, [error UTF8String]);
     lua_error(state);
     return 0;
-  }  
-    
+  }
+  
   NSMethodSignature *sig = [object methodSignatureForSelector:selector];
   if (!sig) {
     NSString *error = [NSString stringWithFormat:@"method '%@' not found in object '%@'.", NSStringFromSelector(selector), [object description]];
@@ -444,9 +444,7 @@ static int lua_objc_lookup_class(lua_State *state)
 static int lua_objc_new_class(lua_State *state)
 {
   const char *className = lua_tostring(state, 1);
-  NSLog(@"#debug: registering new class %s", className);
   Class superclass = lua_objc_toid(state, 2);
-  NSLog(@"#debug: superclass %@", [superclass description]);
   Class klass = objc_allocateClassPair(superclass, className, 0);
   if (!klass) {
     lua_pushfstring(state, "class %s cannot be created (probably it already exists).", className);
@@ -471,6 +469,20 @@ static int lua_objc_new_class(lua_State *state)
   return 1;
 }
 
+
+// Finds Lua function for ObjC method and pushes it on top of stack
+void find_lua_function_for_method(lua_State *state, id obj, SEL selector)
+{
+  do {
+    lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+    lua_pushstring(state, [[obj className] UTF8String]);
+    lua_gettable(state, -2);
+    lua_getfield(state, -1, [NSStringFromSelector(selector) UTF8String]);
+    if (!lua_isnil(state, -1))
+      break;
+  } while ((obj = [obj superclass]) != nil && ![obj isMemberOfClass:[NSObject class]]);    
+}
+
 id invokeLuaFunction(id self, SEL _cmd, ...)
 {
   LuaObjcClassProxy *proxy = [registeredClasses objectForKey:[self class]];
@@ -479,18 +491,112 @@ id invokeLuaFunction(id self, SEL _cmd, ...)
     return 0;
   }
   lua_State *state = proxy->luaState;
-  id obj = self;
-  do {
-    lua_getglobal(state, "__LUNOKHOD_DISPATCH");
-    lua_pushstring(state, [[obj className] UTF8String]);
-    lua_gettable(state, -2);
-    lua_getfield(state, -1, [NSStringFromSelector(_cmd) UTF8String]);
-    if (!lua_isnil(state, -1))
-      break;
-  } while ((obj = [obj superclass]) != nil && ![obj isMemberOfClass:[NSObject class]]); // locate method in superclass
 
-  lua_objc_pushid(state, self);  
-  lua_call(state, 1, 0);
+  // Find Lua function for this method (in self or superclasses)
+  find_lua_function_for_method(state, self, _cmd); // got function on top of stack
+  
+  // Push arguments
+  lua_objc_pushid(state, self);  // push self first
+  
+  Method method = class_getInstanceMethod([self class], _cmd);
+  unsigned argNum = method_getNumberOfArguments(method);
+  
+  va_list list;
+  va_start(list, _cmd);
+  char argType;
+  
+  for(int i = 2; i < argNum; i++) {
+    method_getArgumentType(method, i, &argType, 1);
+    switch (argType) {
+      case LUA_OBJC_TYPE_VOID:
+        lua_pushnil(state);
+        break;
+      case LUA_OBJC_TYPE_ID:
+      case LUA_OBJC_TYPE_CLASS:
+        lua_objc_pushid(state, va_arg(list, id));
+        break;
+      case LUA_OBJC_TYPE_C99_BOOL:
+        lua_pushboolean(state, va_arg(list, int));
+        break;        
+      case LUA_OBJC_TYPE_CHAR: /* the following types are promoted to int in list */
+      case LUA_OBJC_TYPE_UNSIGNED_CHAR:
+      case LUA_OBJC_TYPE_SHORT:
+      case LUA_OBJC_TYPE_UNSIGNED_SHORT:
+      case LUA_OBJC_TYPE_INT:
+        lua_pushnumber(state, va_arg(list, int));
+        break;        
+      case LUA_OBJC_TYPE_UNSIGNED_INT:
+        lua_pushnumber(state, va_arg(list, unsigned int));
+        break;        
+      case LUA_OBJC_TYPE_LONG:
+        lua_pushnumber(state, va_arg(list, long));
+        break;        
+      case LUA_OBJC_TYPE_UNSIGNED_LONG:
+        lua_pushnumber(state, va_arg(list, unsigned long));
+        break;        
+      case LUA_OBJC_TYPE_LONG_LONG:
+        lua_pushnumber(state, va_arg(list, long long));
+        break;        
+      case LUA_OBJC_TYPE_UNSIGNED_LONG_LONG:
+        lua_pushnumber(state, va_arg(list, unsigned long long));
+        break;        
+      case LUA_OBJC_TYPE_FLOAT: /* float is promoted to double in list */
+      case LUA_OBJC_TYPE_DOUBLE: {
+        //FIXME va_arg returns 0 for 'double' on x86_64 when called from Lua. 
+        //I don't know how to fix it.
+        double d = va_arg(list, double);
+        lua_pushnumber(state, d);
+        #if __LP64__
+        NSLog(@"Lunokhod warning: double types in Lua functions for methods don't work on x86_64 when called from Lua.");
+        #endif
+        break;
+      }
+      case LUA_OBJC_TYPE_STRING:
+        lua_pushstring(state, va_arg(list, const char *));
+        break;        
+      default: {
+        NSString *error = [NSString stringWithFormat:@"argument %d of type '%c' is not supported (calling '%@' for object '%@').", i-1, argType, NSStringFromSelector(_cmd), [self description]];
+        lua_pushstring(state, [error UTF8String]);
+        lua_error(state); return 0;
+      }
+    }
+  }
+  va_end(list);
+  char returnType;
+  method_getReturnType(method, &returnType, 1);
+  
+  if (returnType == LUA_OBJC_TYPE_VOID) {
+    lua_call(state, argNum-1, 0);
+    return nil;
+  }    
+  else  
+    lua_call(state, argNum-1, 1);
+
+  // Convert return type to Objective-C  
+  switch (returnType) {
+    case LUA_OBJC_TYPE_CLASS:
+    case LUA_OBJC_TYPE_ID:
+      return lua_objc_luatype_to_id(state, -1);
+      break;
+    case LUA_OBJC_TYPE_CHAR:
+    case LUA_OBJC_TYPE_UNSIGNED_CHAR:
+    case LUA_OBJC_TYPE_SHORT:
+    case LUA_OBJC_TYPE_UNSIGNED_SHORT:
+    case LUA_OBJC_TYPE_INT:
+    case LUA_OBJC_TYPE_LONG: {
+      #if __LP64__
+      long n;
+      #else
+      int n;
+      #endif
+      n = lua_tonumber(state, -1);
+      return (void *)n;
+    }
+    default:
+      lua_pushstring(state, "Unsupported return type");
+      lua_error(state);
+      break;
+  }
   return nil;
 }
 
@@ -498,8 +604,8 @@ static int lua_objc_add_method(lua_State *state)
 {
   Class klass = lua_objc_toid(state, 1);
   const char *selName = lua_tostring(state, 2);
-  NSLog(@"registering in %s, %s", class_getName(klass), selName);
-  class_addMethod(klass, sel_registerName(selName), invokeLuaFunction, lua_tostring(state, 3));
+  const char *types = lua_tostring(state, 3);
+  class_addMethod(klass, sel_registerName(selName), (IMP)invokeLuaFunction, types);
   lua_getglobal(state, "__LUNOKHOD_DISPATCH");
   lua_pushstring(state, class_getName(klass));
   lua_gettable(state, -2);
