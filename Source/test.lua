@@ -50,34 +50,62 @@ print(sub:secondTest_and_also_(10, 20, "from lua"))
 -- test Cocoa
 print("-----------------------------------------------")
 
+
+-- Helper functions to create UI elements
+
+function Window (t)
+  local win = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
+    objc.rect(t.x or 0, t.y or 0, t.width or 300, t.height or 200), 
+    t.style or 15, 
+    2,  -- NSBackingStoreBuffered
+    false)
+  win:setTitle_(t.title or "")
+  return win
+end
+
+function Button (t)
+  local button = objc.class.NSButton:alloc():initWithFrame_(
+    objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
+  button:setBezelStyle_(t.bezelStyle or 1) -- NSRoundedBezelStyle
+  button:setTitle_(t.title or "")
+  if t.action ~= nil then
+    local controller_class = "ButtonController_"..tostring(math.random(1, 1000))
+    local controller = objc.new_class(controller_class, 
+      objc.class.NSObject,
+      function (class)
+        objc.add_method(class, "buttonAction:", "@@:@", t.action)
+      end):alloc():init()
+    button:setTarget_(controller)
+    button:setAction_(controller.buttonAction_)
+  end
+  return button
+end
+
+-- Application
+
 app = objc.class.NSApplication:sharedApplication()
 
-win = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
-  objc.rect(0, 0, 300, 200), 
-  15, -- NSTitledWindowMask|NSClosableWindowMask|NSMiniaturizableWindowMask|NSResizableWindowMask
-  2,  -- NSBackingStoreBuffered
-  false)
-win:setTitle_('Hello World')
+local window = Window{ 
+        x = 0,
+        y = 0,
+        width = 500,
+        height = 200,
+        title = "Hello World"
+      }
 
-button = objc.class.NSButton:alloc():initWithFrame_(objc.rect(0,0,200,200))
-win:contentView():addSubview_(button)
-button:setBezelStyle_(1) -- NSRoundedBezelStyle
-button:setTitle_('Hello!')
---button:sizeToFit()
+local button = Button{
+        width = 100,
+        height = 60,
+        title = "Say Hello",
+        action = function (sender)
+                    print("Hello world!")
+                  end
+       }
 
-button_controller = objc.new_class("ButtonController", objc.class.NSObject,
-                      function (class)
-                        objc.add_method(class, "sayHello:", "@@:@",
-                          function (sender)
-                            print("Hello, world!")
-                          end)
-                      end):alloc():init()
-button:setTarget_(button_controller)
-button:setAction_(button_controller.sayHello_)
+window:contentView():addSubview_(button)
 
-win:display()
-win:makeKeyAndOrderFront_(win)
-app:activateIgnoringOtherApps_(1)
+window:display()
+window:makeKeyAndOrderFront_(window)
 app:run()
 
 --]]
