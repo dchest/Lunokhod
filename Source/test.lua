@@ -46,7 +46,7 @@ sub = MySubClass:alloc():init()
 sub:testMe()
 print(sub:secondTest_and_also_(10, 20, "from lua"))
 
---[[
+---[[
 -- test Cocoa
 print("-----------------------------------------------")
 
@@ -93,7 +93,7 @@ local window = Window{
         title = "Hello World"
       }
 
-local button = Button{
+local sayButton = Button{
         width = 100,
         height = 60,
         title = "Say Hello",
@@ -102,7 +102,18 @@ local button = Button{
                   end
        }
 
-window:contentView():addSubview_(button)
+local quitButton = Button{
+        x = 100,
+        width = 100,
+        height = 60,
+        title = "Quit",
+        action = function (sender)
+                    app:terminate_(sender)
+                  end
+       }
+
+window:contentView():addSubview_(sayButton)
+window:contentView():addSubview_(quitButton)
 
 window:display()
 window:makeKeyAndOrderFront_(window)

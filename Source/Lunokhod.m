@@ -420,6 +420,7 @@ static int lua_objc_releaseid(lua_State *state)
   id *objptr = lua_touserdata(state, -1);
   if (objptr) {
     [*objptr release];
+    [[NSGarbageCollector defaultCollector] enableCollectorForPointer:*objptr];
     *objptr = nil;
   }
   return 0;
@@ -429,6 +430,7 @@ static void lua_objc_pushid(lua_State *state, id object)
 {
   id *p = lua_newuserdata(state, sizeof(id));
   *p = object;
+  [[NSGarbageCollector defaultCollector] disableCollectorForPointer:object];
   // Create metatable for id
   lua_newtable(state);
   lua_pushstring(state, "__index");
@@ -437,11 +439,9 @@ static void lua_objc_pushid(lua_State *state, id object)
   lua_pushstring(state, "__tostring");
   lua_pushcfunction(state, lua_objc_id_tostring);
   lua_settable(state, -3);
-  if ([NSGarbageCollector defaultCollector] == nil) {
-    lua_pushstring(state, "__gc");
-    lua_pushcfunction(state, lua_objc_releaseid);
-    lua_settable(state, -3);
-  }
+  lua_pushstring(state, "__gc");
+  lua_pushcfunction(state, lua_objc_releaseid);
+  lua_settable(state, -3);
   lua_setmetatable(state, -2);    
 }
 
