@@ -75,7 +75,11 @@ static lua_Number LoadNumber(LoadState* S)
 
 static TString* LoadString(LoadState* S)
 {
+#if __LP64__
+ unsigned int size;
+#else
  size_t size;
+#endif
  LoadVar(S,size);
  if (size==0)
   return NULL;
@@ -220,7 +224,11 @@ void luaU_header (char* h)
  *h++=(char)LUAC_FORMAT;
  *h++=(char)*(char*)&x;				/* endianness */
  *h++=(char)sizeof(int);
+#if __LP64__
+ *h++=(char)sizeof(unsigned int);
+#else
  *h++=(char)sizeof(size_t);
+#endif
  *h++=(char)sizeof(Instruction);
  *h++=(char)sizeof(lua_Number);
  *h++=(char)(((lua_Number)0.5)==0);		/* is lua_Number integral? */
