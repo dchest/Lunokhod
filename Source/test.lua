@@ -16,24 +16,25 @@ for i=1,20000 do
 end
 --]]
 
-MyClass = objc.new_class("MyClass", objc.class.NSObject, 
-  function (class) -- class initialization 
+MyClass = objc.new_class("MyClass", objc.class.NSObject,
+  function (class) -- class initialization
     print ("Class initialization")
-    
-    objc.add_method(class, "testMe", "v@:", 
-      function (self) 
-        print "testMe works" 
+
+    objc.add_method(class, "testMe", "v@:",
+      function (self)
+        print "testMe works"
       end)
 
-    objc.add_method(class, "secondTest:and:also:", "@@:id@", 
-      function (self, first, second, third) 
+    objc.add_method(class, "secondTest:and:also:", "@@:idd@",
+      function (self, first, second, third, fourth)
         print(self, "Second test")
-        print("1 argument: ", first) 
-        print("2 argument: ", second) 
-        print("3 argument: ", third) 
+        print("1 argument: ", first)
+        print("2 argument: ", second)
+        print("3 argument: ", third)
+        print("4 argument: ", fourth)
         return "string returned from secondTest:and:also:"
       end)
-    
+
   end)
 
 MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
@@ -44,7 +45,7 @@ MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
 MyClass:alloc():init():testMe()
 sub = MySubClass:alloc():init()
 sub:testMe()
-print(sub:secondTest_and_also_(10, 20, "from lua"))
+print(sub:secondTest_and_also_(10, 20, 30, "from lua"))
 --]]
 
 --[[
@@ -56,8 +57,8 @@ print("-----------------------------------------------")
 
 function Window (t)
   local win = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
-    objc.rect(t.x or 0, t.y or 0, t.width or 300, t.height or 200), 
-    t.style or 15, 
+    objc.rect(t.x or 0, t.y or 0, t.width or 300, t.height or 200),
+    t.style or 15,
     2,  -- NSBackingStoreBuffered
     false)
   win:setTitle_(t.title or "")
@@ -71,7 +72,7 @@ function Button (t)
   button:setTitle_(t.title or "")
   if t.action ~= nil then
     local controller_class = "ButtonController_"..tostring(math.random(1, 1000))
-    local controller = objc.new_class(controller_class, 
+    local controller = objc.new_class(controller_class,
       objc.class.NSObject,
       function (class)
         objc.add_method(class, "buttonAction:", "@@:@", t.action)
@@ -86,7 +87,7 @@ end
 
 app = objc.class.NSApplication:sharedApplication()
 
-local window = Window{ 
+local window = Window{
         x = 0,
         y = 0,
         width = 500,

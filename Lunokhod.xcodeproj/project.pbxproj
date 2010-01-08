@@ -38,6 +38,7 @@
 		0A5A498910F28E0D0017275E /* lzio.c in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A496910F28E0D0017275E /* lzio.c */; };
 		0A5A49C010F28FE80017275E /* Lunokhod.m in Sources */ = {isa = PBXBuildFile; fileRef = 0A5A49BF10F28FE80017275E /* Lunokhod.m */; };
 		0A71440410F68D16009F985E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0A71440310F68D16009F985E /* Cocoa.framework */; };
+		0AD5C23910F6D5BE006210EE /* TestClass.m in Sources */ = {isa = PBXBuildFile; fileRef = 0AD5C23810F6D5BE006210EE /* TestClass.m */; };
 		8DD76F9A0486AA7600D96B5E /* Test.m in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* Test.m */; settings = {ATTRIBUTES = (); }; };
 		8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
 		8DD76F9F0486AA7600D96B5E /* Lunokhod.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* Lunokhod.1 */; };
@@ -115,6 +116,8 @@
 		0A5A49BF10F28FE80017275E /* Lunokhod.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Lunokhod.m; path = Source/Lunokhod.m; sourceTree = "<group>"; };
 		0A5A4A6E10F298F70017275E /* test.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test.lua; path = Source/test.lua; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
 		0A71440310F68D16009F985E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		0AD5C23710F6D5BE006210EE /* TestClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TestClass.h; sourceTree = "<group>"; };
+		0AD5C23810F6D5BE006210EE /* TestClass.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TestClass.m; sourceTree = "<group>"; };
 		32A70AAB03705E1F00C91783 /* Lunokhod_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lunokhod_Prefix.pch; sourceTree = "<group>"; };
 		8DD76FA10486AA7600D96B5E /* Lunokhod */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Lunokhod; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6859EA3029092ED04C91782 /* Lunokhod.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Lunokhod.1; sourceTree = "<group>"; };
@@ -228,6 +231,8 @@
 			children = (
 				0A5A49BE10F28FE80017275E /* Lunokhod.h */,
 				0A5A49BF10F28FE80017275E /* Lunokhod.m */,
+				0AD5C23710F6D5BE006210EE /* TestClass.h */,
+				0AD5C23810F6D5BE006210EE /* TestClass.m */,
 				0A5A4A6E10F298F70017275E /* test.lua */,
 			);
 			name = Classes;
@@ -323,6 +328,7 @@
 				0A5A498810F28E0D0017275E /* lvm.c in Sources */,
 				0A5A498910F28E0D0017275E /* lzio.c in Sources */,
 				0A5A49C010F28FE80017275E /* Lunokhod.m in Sources */,
+				0AD5C23910F6D5BE006210EE /* TestClass.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -364,6 +370,10 @@
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_GC = required;
+				GCC_ENABLE_SSE3_EXTENSIONS = NO;
+				GCC_ENABLE_SSE41_EXTENSIONS = NO;
+				GCC_ENABLE_SSE42_EXTENSIONS = NO;
+				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_VERSION = "";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
