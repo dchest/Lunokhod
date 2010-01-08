@@ -742,11 +742,16 @@ static int lua_objc_add_method(lua_State *state)
   BOOL result = YES;
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  if (luaL_dofile(luaState_, [filename UTF8String]) != 0) {
-    [self logCurrentError];
+  @try {
+    if (luaL_dofile(luaState_, [filename UTF8String]) != 0) {
+      [self logCurrentError];
+      result = NO;
+    }    
+  }
+  @catch (NSException * e) {
+    NSLog(@"Lunokhod Objective-C Exception: %@", [e reason]);
     result = NO;
   }
-
   [pool drain];
   return result;
 }
@@ -766,10 +771,16 @@ static int lua_objc_add_method(lua_State *state)
 
 - (BOOL)doString:(NSString *)string
 {
-  if (luaL_dostring(luaState_, [string UTF8String]) == 0) {
-    return YES;
-  } else {
-    [self logCurrentError];
+  @try {
+    if (luaL_dostring(luaState_, [string UTF8String]) == 0) {
+      return YES;
+    } else {
+      [self logCurrentError];
+      return NO;
+    }    
+  }
+  @catch (NSException * e) {
+    NSLog(@"Lunokhod Objective-C Exception: %@", [e reason]);
     return NO;
   }
 }
