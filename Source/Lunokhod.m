@@ -159,7 +159,7 @@ static int lua_objc_callselector(lua_State *state)
 
   while (objcIndex < numberOfArguments) {
 
-    if (lua_isnil(state, luaIndex)) {
+    if (lua_isnil(state, luaIndex) || lua_isnone(state, luaIndex)) {
       int null = 0;
       [inv setArgument:&null atIndex:objcIndex];
       continue;
@@ -656,6 +656,16 @@ static int lua_objc_add_method(lua_State *state)
   return 0;
 }
 
+static int lua_objc_load_framework(lua_State *state)
+{
+  const char *path = lua_tostring(state, -1);
+  if (![[NSBundle bundleWithPath:[NSString stringWithUTF8String:path]] load]) {
+    lua_pushfstring(state, "cannot load framework %s", path);
+    lua_error(state);
+  }
+  return 0;
+}
+
 @implementation Lunokhod
 
 - (id)init
@@ -694,6 +704,10 @@ static int lua_objc_add_method(lua_State *state)
 
   lua_pushstring(luaState_, "add_method");
   lua_pushcfunction(luaState_, lua_objc_add_method);
+  lua_settable(luaState_, -3);
+
+  lua_pushstring(luaState_, "load_framework");
+  lua_pushcfunction(luaState_, lua_objc_load_framework);
   lua_settable(luaState_, -3);
 
   lua_pushstring(luaState_, "rect");

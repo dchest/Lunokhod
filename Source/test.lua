@@ -91,7 +91,7 @@ local window = Window{
         x = 0,
         y = 0,
         width = 500,
-        height = 200,
+        height = 600,
         title = "Hello World"
       }
 
@@ -116,6 +116,13 @@ local quitButton = Button{
 
 window:contentView():addSubview_(sayButton)
 window:contentView():addSubview_(quitButton)
+
+objc.load_framework("/System/Library/Frameworks/WebKit.framework")
+
+web = objc.class.WebView:alloc():initWithFrame_(objc.rect(0, 100, 500, 500))
+frame = web:mainFrame()
+frame:loadRequest_(objc.class.NSURLRequest:requestWithURL_(objc.class.NSURL:URLWithString_("http://www.google.com")))
+window:contentView():addSubview_(web)
 
 window:display()
 window:makeKeyAndOrderFront_(window)
