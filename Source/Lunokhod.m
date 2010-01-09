@@ -351,6 +351,13 @@ static int lua_objc_callselector(lua_State *state)
       lua_pushstring(state, value);
       break;
     }
+    case LUA_OBJC_TYPE_ARRAY:
+    case LUA_OBJC_TYPE_STRUCT:
+    case LUA_OBJC_TYPE_SELECTOR: {
+      char *value = lua_newuserdata(state, [[inv methodSignature] methodReturnLength]);
+      [inv getReturnValue:(char *)value];
+      break;
+    }
     case LUA_OBJC_TYPE_VOID:
       return 0; // no return
     default: {
@@ -500,6 +507,16 @@ static int lua_objc_rect(lua_State *state)
   NSRect rect = NSMakeRect(x, y, w, h);
   void *p = lua_newuserdata(state, sizeof(rect));
   memcpy(p, &rect, sizeof(rect));
+  return 1;
+}
+
+static int lua_objc_size(lua_State *state)
+{
+  CGFloat w = lua_tonumber(state, 1);
+  CGFloat h = lua_tonumber(state, 2);
+  NSSize sz = NSMakeSize(w, h);
+  void *p = lua_newuserdata(state, sizeof(sz));
+  memcpy(p, &sz, sizeof(sz));
   return 1;
 }
 
@@ -714,6 +731,10 @@ static int lua_objc_load_framework(lua_State *state)
   lua_pushcfunction(luaState_, lua_objc_rect);
   lua_settable(luaState_, -3);
 
+  lua_pushstring(luaState_, "size");
+  lua_pushcfunction(luaState_, lua_objc_size);
+  lua_settable(luaState_, -3);
+
   lua_setglobal(luaState_, "objc");
 
   lua_newtable(luaState_);
@@ -741,8 +762,15 @@ static int lua_objc_load_framework(lua_State *state)
 - (void)logCurrentError
 {
   // Get error from stack and output it
-  if (!lua_isnil(luaState_, -1))
-    NSLog(@"Lunokhod error: %s", lua_tostring(luaState_, -1));
+  if (!lua_isnil(luaState_, -1)) {
+    const char *msg = lua_tostring(luaState_, -1);
+    lua_Debug info;
+    lua_getstack(luaState_, 0, &info);
+    lua_getfield(luaState_, LUA_GLOBALSINDEX, "f");
+    lua_getinfo(luaState_, ">S", &info);
+
+    NSLog(@"Lunokhod error [%d]: %s \n %s", info.currentline, msg, info.short_src);
+  }
   else {
     NSLog(@"Lunokhod error: unknown");
   }
