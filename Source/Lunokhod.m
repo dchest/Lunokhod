@@ -478,8 +478,10 @@ static int lua_objc_newclass(lua_State *state)
   Class superclass = lua_objc_toid(state, 2);
   Class klass = objc_allocateClassPair(superclass, className, 0);
   if (!klass) {
-    lua_pushfstring(state, "class %s cannot be created (probably it already exists).", className);
-    lua_error(state); return 0;
+    //lua_pushfstring(state, "class %s cannot be created (probably it already exists).", className);
+    //lua_error(state); return 0;
+    lua_pushnil(state);
+    return 0;
   }
   // Register class in function dispatch
   lua_getglobal(state, "__LUNOKHOD_DISPATCH");

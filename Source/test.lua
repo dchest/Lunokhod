@@ -49,9 +49,10 @@ print(sub:secondTest_and_also_(10, 20, 30, "from lua"))
 --]]
 
 ---[[
--- test Cocoa
 print("-----------------------------------------------")
 
+
+-------------------------------------------------------------------------------------
 
 -- Helpers --
 
@@ -105,7 +106,7 @@ function Button:new (t)
   local b = newinstance(self)
   b.object = objc.class.NSButton:alloc():initWithFrame_(
                 objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
-  b.object:setBezelStyle_(t.bezelStyle or 1) -- NSRoundedBezelStyle
+  b.object:setBezelStyle_(t.style or 1) -- NSRoundedBezelStyle
   b.object:setTitle_(t.title or "")
 
   if t.action ~= nil then
@@ -126,10 +127,12 @@ end
 WebView = {}
 
 function WebView:new (t)
+
   if not self.frameworkloaded then
     objc.loadframework("WebKit")
     self.frameworkloaded = true
   end
+
   local w = newinstance(self)
   w.object = objc.class.WebView:alloc():initWithFrame_(
     objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
@@ -150,6 +153,8 @@ function WebView:new (t)
   end
   return w
 end
+
+-------------------------------------------------------------------------------------
 
 -- Application
 
@@ -207,4 +212,4 @@ window:show()
 
 app:run()
 
---]]
+--]] --EOF
