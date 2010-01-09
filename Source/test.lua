@@ -123,26 +123,32 @@ end
 
 -------------------------------------------------------------------------------------
 
-function WebView (t)
-  local web = objc.class.WebView:alloc():initWithFrame_(
+WebView = {}
+
+function WebView:new (t)
+  if not self.frameworkloaded then
+    objc.loadframework("WebKit")
+    self.frameworkloaded = true
+  end
+  local w = newinstance(self)
+  w.object = objc.class.WebView:alloc():initWithFrame_(
     objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
   if t.onload ~= nil then
-    local delegate_class = "WebViewDelegate_"..tostring(math.random(1, 1000))
-    local delegate = objc.newclass(delegate_class, objc.class.NSObject,
+    local delegate = objc.newclass(unique_classname("WebViewDelegate"), objc.class.NSObject,
       function (class)
         objc.addmethod(class, "webView:didFinishLoadForFrame:", "v@:@@",
             function (sender, webview, frame)
               t.onload(webview, frame)
             end)
       end):alloc():init()
-    web:setFrameLoadDelegate_(delegate)
+    w.object:setFrameLoadDelegate_(delegate)
   end
-  local frame = web:mainFrame()
   if t.url ~= nil then
+    local frame = w.object:mainFrame()
     frame:loadRequest_(objc.class.NSURLRequest:requestWithURL_(
       objc.class.NSURL:URLWithString_(t.url)))
   end
-  return web
+  return w
 end
 
 -- Application
@@ -179,9 +185,7 @@ local quitButton = Button:new{
 window:addview(sayButton)
 window:addview(quitButton)
 
-objc.loadframework("/System/Library/Frameworks/WebKit.framework")
-
-local web = WebView{
+local web = WebView:new{
         y = 100,
         width = 500,
         height = 500,

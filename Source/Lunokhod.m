@@ -677,11 +677,29 @@ static int lua_objc_addmethod(lua_State *state)
 
 static int lua_objc_loadframework(lua_State *state)
 {
-  const char *path = lua_tostring(state, -1);
-  if (![[NSBundle bundleWithPath:[NSString stringWithUTF8String:path]] load]) {
-    lua_pushfstring(state, "cannot load framework %s", path);
-    lua_error(state);
+  NSString *libraryPath = [@"/" stringByAppendingPathComponent:[NSString pathWithComponents:[NSArray arrayWithObjects:@"Library", @"Frameworks", nil]]];
+  //TODO bundleLibraryPath
+  NSString *userLibraryPath = [NSHomeDirectory() stringByAppendingPathComponent:libraryPath];
+  NSString *systemLibraryPath = [@"/System" stringByAppendingPathComponent:libraryPath];
+  NSArray *paths = [NSArray arrayWithObjects:userLibraryPath, libraryPath, systemLibraryPath, nil];
+
+  NSString *name = [NSString stringWithUTF8String:lua_tostring(state, -1)];
+  NSString *filename = [name stringByAppendingPathExtension:@"framework"];
+
+  for (NSString *path in paths) {
+    if ([[NSBundle bundleWithPath:[path stringByAppendingPathComponent:filename]] load]) {
+      return 0; // loaded
+    }
   }
+
+  // try plain name, maybe it's already specified as a full path (incl. extension)
+  if ([[NSBundle bundleWithPath:name] load]) {
+    return 0; // loaded
+  }
+
+  // failed to load
+  lua_pushfstring(state, "cannot load framework '%s'", name);
+  lua_error(state);
   return 0;
 }
 
