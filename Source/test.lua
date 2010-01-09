@@ -16,16 +16,16 @@ for i=1,20000 do
 end
 --]]
 
-MyClass = objc.new_class("MyClass", objc.class.NSObject,
+MyClass = objc.newclass("MyClass", objc.class.NSObject,
   function (class) -- class initialization
     print ("Class initialization")
 
-    objc.add_method(class, "testMe", "v@:",
+    objc.addmethod(class, "testMe", "v@:",
       function (self)
         print "testMe works"
       end)
 
-    objc.add_method(class, "secondTest:and:also:", "@@:idd@",
+    objc.addmethod(class, "secondTest:and:also:", "@@:idd@",
       function (self, first, second, third, fourth)
         print(self, "Second test")
         print("1 argument: ", first)
@@ -37,7 +37,7 @@ MyClass = objc.new_class("MyClass", objc.class.NSObject,
 
   end)
 
-MySubClass = objc.new_class("MySubClass", objc.class.MyClass,
+MySubClass = objc.newclass("MySubClass", objc.class.MyClass,
   function (class)
     print ("initing subclass")
   end)
@@ -48,49 +48,92 @@ sub:testMe()
 print(sub:secondTest_and_also_(10, 20, 30, "from lua"))
 --]]
 
---[[
+---[[
 -- test Cocoa
 print("-----------------------------------------------")
 
 
--- Helper functions to create UI elements
+-- Helpers --
 
-function Window (t)
-  local win = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
+function newinstance (t)
+  local o = {}
+  setmetatable(o, t)
+  t.__index = t
+  return o
+end
+
+function uuid ()
+  return tostring(objc.class.NSProcessInfo:processInfo():globallyUniqueString())
+end
+
+function unique_classname (prefix)
+  if prefix == nil then prefix = "Class" end
+  return prefix .. "_" .. string.gsub(uuid(), "-", "")
+end
+
+
+-------------------------------------------------------------------------------------
+
+Window = {}
+
+function Window:new (t)
+  local w = newinstance(self)
+  w.object = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
     objc.rect(t.x or 0, t.y or 0, t.width or 300, t.height or 200),
     t.style or 15,
     2,  -- NSBackingStoreBuffered
     false)
-  win:setTitle_(t.title or "")
-  return win
+  w.object:setTitle_(t.title or "")
+  return w
 end
 
-function Button (t)
-  local button = objc.class.NSButton:alloc():initWithFrame_(
-    objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
-  button:setBezelStyle_(t.bezelStyle or 1) -- NSRoundedBezelStyle
-  button:setTitle_(t.title or "")
-  if t.action ~= nil then
-    local controller_class = "ButtonController_"..tostring(math.random(1, 1000))
-    local controller = objc.new_class(controller_class,
-      objc.class.NSObject,
-      function (class)
-        objc.add_method(class, "buttonAction:", "@@:@", t.action)
-      end):alloc():init()
-    button:setTarget_(controller)
-    button:setAction_(controller.buttonAction_)
-  end
-  return button
+function Window:addview (v)
+  if type(v) == "table" then v = v.object end
+  self.object:contentView():addSubview_(v)
 end
+
+function Window:show ()
+  self.object:display()
+  self.object:makeKeyAndOrderFront_(self.object)
+end
+
+-------------------------------------------------------------------------------------
+
+Button = {}
+
+function Button:new (t)
+  local b = newinstance(self)
+  b.object = objc.class.NSButton:alloc():initWithFrame_(
+                objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
+  b.object:setBezelStyle_(t.bezelStyle or 1) -- NSRoundedBezelStyle
+  b.object:setTitle_(t.title or "")
+
+  if t.action ~= nil then
+    -- controller object is unique for every button
+    local ctr = objc.newclass(unique_classname("ButtonController"), objc.class.NSObject,
+      function (class)
+        objc.addmethod(class, "buttonAction:", "@@:@", function (s) print(s) t.action(button) end)
+      end):alloc():init()
+    b.object:setTarget_(ctr)
+    b.object:setAction_(ctr.buttonAction_)
+  end
+
+  return b
+end
+
+-------------------------------------------------------------------------------------
 
 function WebView (t)
   local web = objc.class.WebView:alloc():initWithFrame_(
     objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
   if t.onload ~= nil then
     local delegate_class = "WebViewDelegate_"..tostring(math.random(1, 1000))
-    local delegate = objc.new_class(delegate_class, objc.class.NSObject,
+    local delegate = objc.newclass(delegate_class, objc.class.NSObject,
       function (class)
-        objc.add_method(class, "webView:didFinishLoadForFrame:", "v@:@@", t.onload)
+        objc.addmethod(class, "webView:didFinishLoadForFrame:", "v@:@@",
+            function (sender, webview, frame)
+              t.onload(webview, frame)
+            end)
       end):alloc():init()
     web:setFrameLoadDelegate_(delegate)
   end
@@ -106,8 +149,7 @@ end
 
 app = objc.class.NSApplication:sharedApplication()
 
-
-local window = Window{
+local window = Window:new{
         x = 0,
         y = 0,
         width = 500,
@@ -115,36 +157,36 @@ local window = Window{
         title = "Hello World"
       }
 
-local sayButton = Button{
+local sayButton = Button:new{
         width = 100,
         height = 60,
         title = "Say Hello",
-        action = function (sender)
+        action = function ()
                     print("Hello world!")
                   end
-       }
+      }
 
-local quitButton = Button{
+local quitButton = Button:new{
         x = 100,
         width = 100,
         height = 60,
         title = "Quit",
-        action = function (sender)
-                    app:terminate_(sender)
+        action = function ()
+                    app:terminate_(nil)
                   end
-       }
+      }
 
-window:contentView():addSubview_(sayButton)
-window:contentView():addSubview_(quitButton)
+window:addview(sayButton)
+window:addview(quitButton)
 
-objc.load_framework("/System/Library/Frameworks/WebKit.framework")
+objc.loadframework("/System/Library/Frameworks/WebKit.framework")
 
-web = WebView{
+local web = WebView{
         y = 100,
         width = 500,
         height = 500,
-        url = "http://www.codingrobots.com",
-        onload = function (sender, view, frame)
+        url = "http://www.google.com",
+        onload = function (webview, frame)
                     -- save page screenshot
                     local v = frame:frameView():documentView()
                     local rect = v:bounds()
@@ -155,10 +197,10 @@ web = WebView{
                     image:TIFFRepresentation():writeToFile_atomically_("/Users/dmitry/Desktop/1.tiff", 1)
                  end
       }
-window:contentView():addSubview_(web)
+window:addview(web)
 
-window:display()
-window:makeKeyAndOrderFront_(window)
+window:show()
+
 app:run()
 
 --]]
