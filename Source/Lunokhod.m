@@ -160,8 +160,10 @@ static int lua_objc_callselector(lua_State *state)
   while (objcIndex < numberOfArguments) {
 
     if (lua_isnil(state, luaIndex) || lua_isnone(state, luaIndex)) {
-      int null = 0;
+      id null = nil;
       [inv setArgument:&null atIndex:objcIndex];
+      objcIndex++;
+      luaIndex++;
       continue;
     }
 
@@ -470,7 +472,7 @@ static int lua_objc_lookup_class(lua_State *state)
   return 1;
 }
 
-static int lua_objc_new_class(lua_State *state)
+static int lua_objc_newclass(lua_State *state)
 {
   const char *className = lua_tostring(state, 1);
   Class superclass = lua_objc_toid(state, 2);
@@ -655,7 +657,7 @@ id invokeLuaFunction(id self, SEL _cmd, ...)
   return nil;
 }
 
-static int lua_objc_add_method(lua_State *state)
+static int lua_objc_addmethod(lua_State *state)
 {
   Class klass = lua_objc_toid(state, 1);
   const char *selName = lua_tostring(state, 2);
@@ -673,7 +675,7 @@ static int lua_objc_add_method(lua_State *state)
   return 0;
 }
 
-static int lua_objc_load_framework(lua_State *state)
+static int lua_objc_loadframework(lua_State *state)
 {
   const char *path = lua_tostring(state, -1);
   if (![[NSBundle bundleWithPath:[NSString stringWithUTF8String:path]] load]) {
@@ -715,16 +717,16 @@ static int lua_objc_load_framework(lua_State *state)
   // objc.class = {our table}
   lua_settable(luaState_, -3);
 
-  lua_pushstring(luaState_, "new_class");
-  lua_pushcfunction(luaState_, lua_objc_new_class);
+  lua_pushstring(luaState_, "newclass");
+  lua_pushcfunction(luaState_, lua_objc_newclass);
   lua_settable(luaState_, -3);
 
-  lua_pushstring(luaState_, "add_method");
-  lua_pushcfunction(luaState_, lua_objc_add_method);
+  lua_pushstring(luaState_, "addmethod");
+  lua_pushcfunction(luaState_, lua_objc_addmethod);
   lua_settable(luaState_, -3);
 
-  lua_pushstring(luaState_, "load_framework");
-  lua_pushcfunction(luaState_, lua_objc_load_framework);
+  lua_pushstring(luaState_, "loadframework");
+  lua_pushcfunction(luaState_, lua_objc_loadframework);
   lua_settable(luaState_, -3);
 
   lua_pushstring(luaState_, "rect");
