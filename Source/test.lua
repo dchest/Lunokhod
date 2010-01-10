@@ -90,7 +90,7 @@ end
     "(unsigned int)test" => "test", "I@:"
 
 --]]
-function parse_method (s)
+function parse_method (method)
   local objc_types = {
     _Bool = "B",
     char = "c",
@@ -119,13 +119,13 @@ function parse_method (s)
   local types = ""
   local isreturntype = true
 
-  for tp, sl in string.gmatch(s, "%(([^%)]+)%)%s?([^%(]*)") do
-    types = types .. objc_types[tp]
+  for t, s in string.gmatch(method, "%(([^%)]+)%)%s?([^%(]*)") do
+    types = types .. objc_types[t]
     if isreturntype then
-        types = types .. "@:" -- insert self and _cmd types
-        isreturntype = false
+      types = types .. "@:" -- insert self and _cmd types
+      isreturntype = false
     end
-    sel = sel .. sl
+    sel = sel .. s
   end
   return sel, types
 end
@@ -137,7 +137,7 @@ end
 --]]
 function maybecall (func, ...)
   if func ~= nil then
-    func(...)
+    return func(...)
   end
 end
 
