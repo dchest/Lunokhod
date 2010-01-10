@@ -54,8 +54,12 @@ print("-----------------------------------------------")
 
 --- Helpers --------------------------------------------------------------------------
 
+--[[
+
+  Create new instance of "class" (table) `self` and initialize it with `init` table.
+
+--]]
 function newinstance (self, init)
-  --local o = {}
   setmetatable(init, self)
   self.__index = self
   return init
@@ -65,6 +69,13 @@ function uuid ()
   return tostring(objc.class.NSProcessInfo:processInfo():globallyUniqueString())
 end
 
+--[[
+
+  Return unique string good for use as a class name.
+
+  (prefix_UUID, or Class_UUID if no prefix given)
+
+--]]
 function unique_classname (prefix)
   if prefix == nil then prefix = "Class" end
   return prefix .. "_" .. string.gsub(uuid(), "-", "")
@@ -72,57 +83,60 @@ end
 
 --[[
 
-  Convert string describing selector and types to
-  selector string and types string.
+  Convert string describing Objective-C method to selector and types strings.
 
-  Example:
+  Examples:
 
-    (void)webView:(id) didFinishLoadForFrame:(id)
-
-  will return:
-
-    "webView:didFinishLoadFrame:", "v@:@@"
+    "(void)webView:(id) didFinishLoadForFrame:(id)" => "webView:didFinishLoadFrame:", "v@:@@"
+    "(unsigned int)test" => "test", "I@:"
 
 --]]
-function toselector (s)
+function parse_method (s)
   local objc_types = {
+    _Bool = "B",
+    char = "c",
+    ["unsigned char"] = "C",
+    double = "d",
+    float = "f",
+    int = "i",
+    ["unsigned int"] = "I",
+    long = "l",
+    ["unsigned long"] = "L",
+    ["long long"] = "q",
+    ["unsigned long long"] = "Q",
+    short = "s",
+    ["unsigned short"] = "S",
     void = "v",
     id = "@",
     IBAction = "@",
-    double = "d",
-    int = "i"
-    --TODO: add more types
+    class = "#",
+    ["void *"] = "^",
+    ["const char *"] = "*",
+    array = "[",
+    struct = "{",
+    SEL = ":",
   }
   local sel = ""
   local types = ""
-  local w
-  local i = 0
-  local istype = true
-  local hasreturntype = false
+  local isreturntype = true
 
-  while 1 do
-    w, i = string.match(s, "([%w_:]+)()", i)
-    if w == nil then break end
-    if istype then
-      types = types .. objc_types[w]
-      if not hasreturntype then
-        types = types .. "@:" -- add self and _cmd types
-        hasreturntype = true
-      end
-    else
-      sel = sel .. w
+  for tp, sl in string.gmatch(s, "%(([^%)]+)%)%s?([^%(]*)") do
+    types = types .. objc_types[tp]
+    if isreturntype then
+        types = types .. "@:" -- insert self and _cmd types
+        isreturntype = false
     end
-    istype = not istype
+    sel = sel .. sl
   end
   return sel, types
 end
 
 --[[
 
-  Call function func with arguments if it's not nil
+  Call function `func` (with arguments) if it's not nil
 
 --]]
-function maybecall(func, ...)
+function maybecall (func, ...)
   if func ~= nil then
     func(...)
   end
@@ -131,22 +145,57 @@ end
 
 -------------------------------------------------------------------------------------
 
+--[[
+
+  Create new Objective-C class and return it.
+
+  Example:
+
+    Class{
+      name = "MyClass",
+      parent = objc.class.NSObject,
+      methods = {
+        "(id)webView:(id)didFinishLoadForFrame:(id)" = function () print "OK" end
+      }
+    }
+
+  Can omit:
+
+    `parent` - default is objc.class.NSObject
+    `name` - default is a unique class name (with `prefix` if given)
+    `methods` - default is don't add methods... but why?
+
+--]]
 function Class (param)
   return objc.newclass(
     param.name or unique_classname(param.prefix or ""),
     param.parent or objc.class.NSObject,
     function (c)
       for k, v in pairs(param.methods) do
-        local sel, typ = toselector(k)
+        local sel, typ = parse_method(k)
         objc.addmethod(c, sel, typ, v)
       end
     end)
 end
 
+--[[
+
+  Create new Objective-C class and return a new instance of it.
+
+  Arguments are the same as in `Class`.
+
+--]]
 function Object (param)
   return Class(param):alloc():init()
 end
 
+--[[
+
+  Assign an action function to table's Objective-C object.
+
+  Creates a new controller object (with method `func`) and sets it as target.
+
+--]]
 function setaction (t, func)
   local ctr = Object{
                 prefix = "ActionController",
@@ -196,17 +245,6 @@ function Button:new (init)
   setaction(b, function () b:action() end)
   return b
 end
-
---------------------------------------
---[[
-Class{
-  name = "MyClass",
-  parent = objc.class.NSObject,
-  methods = {
-    "(id)webView:(id)didFinishLoadForFrame:(id)" = function () print "OK" end
-  }
-}
-]]
 
 -------------------------------------------------------------------------------------
 
