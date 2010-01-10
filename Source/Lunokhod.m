@@ -287,10 +287,12 @@ static int lua_objc_callselector(lua_State *state)
     case LUA_OBJC_TYPE_CHAR: {
       get_return_value(char);
       lua_pushinteger(state, _value);
+      break;
     }
     case LUA_OBJC_TYPE_UNSIGNED_CHAR: {
       get_return_value(unsigned char);
       lua_pushinteger(state, _value);
+      break;
     }
     case LUA_OBJC_TYPE_C99_BOOL: {
       get_return_value(_Bool);
