@@ -155,7 +155,7 @@ static int lua_objc_callselector(lua_State *state)
   int objcIndex = 2;
   int luaIndex = 3;
   int numberOfArguments = [sig numberOfArguments];
-  void *buffer = NULL; // for array and struct
+  void *buffer = NULL; // for array and struct - declared here to free it after invocation
 
   while (objcIndex < numberOfArguments) {
 
@@ -230,16 +230,10 @@ static int lua_objc_callselector(lua_State *state)
         ensure_lua_type(LUA_TNUMBER, state, luaIndex);
         set_arg(unsigned long long, lua_tonumber(state, luaIndex), objcIndex, inv);
         break;
-      case LUA_OBJC_TYPE_DOUBLE: {
+      case LUA_OBJC_TYPE_DOUBLE:
         ensure_lua_type(LUA_TNUMBER, state, luaIndex);
         set_arg(double, lua_tonumber(state, luaIndex), objcIndex, inv);
-        /*NSUInteger length = [sig frameLength];
-        double d = lua_tonumber(state, luaIndex);
-        buffer = malloc(length);
-        memcpy(buffer, &d, length);
-        [inv setArgument:buffer atIndex:objcIndex];*/
         break;
-      }
       case LUA_OBJC_TYPE_FLOAT:
         ensure_lua_type(LUA_TNUMBER, state, luaIndex);
         set_arg(float, lua_tonumber(state, luaIndex), objcIndex, inv);
