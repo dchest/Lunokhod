@@ -243,6 +243,9 @@ function Button:new (init)
   b.object:setBezelStyle_(b.style or 1) -- NSRoundedBezelStyle
   b.object:setTitle_(b.title or "")
   setaction(b, function () b:action() end)
+  if b.superview ~= nil then
+    b.superview:addview(b)
+  end
   return b
 end
 
@@ -297,6 +300,7 @@ local window = Window:new{
       }
 
 local sayButton = Button:new{
+        superview = window,
         width = 100,
         height = 60,
         title = "Say Hello",
@@ -306,6 +310,7 @@ local sayButton = Button:new{
       }
 
 local quitButton = Button:new{
+        superview = window,
         x = 100,
         width = 100,
         height = 60,
@@ -318,8 +323,12 @@ local quitButton = Button:new{
                   end
       }
 
-window:addview(sayButton)
-window:addview(quitButton)
+-- Example of prototype-based OO
+local anotherButton = quitButton:new{
+  x = 200,
+  title = "Haha",
+  action = function () print"Haha" end
+}
 
 local web = WebView:new{
         y = 100,
