@@ -52,15 +52,13 @@ print(sub:secondTest_and_also_(10, 20, 30, "from lua"))
 print("-----------------------------------------------")
 
 
--------------------------------------------------------------------------------------
+--- Helpers --------------------------------------------------------------------------
 
--- Helpers --
-
-function newinstance (t)
-  local o = {}
-  setmetatable(o, t)
-  t.__index = t
-  return o
+function newinstance (self, init)
+  --local o = {}
+  setmetatable(init, self)
+  self.__index = self
+  return init
 end
 
 function uuid ()
@@ -72,13 +70,100 @@ function unique_classname (prefix)
   return prefix .. "_" .. string.gsub(uuid(), "-", "")
 end
 
+--[[
+
+  Convert string describing selector and types to
+  selector string and types string.
+
+  Example:
+
+    (void)webView:(id) didFinishLoadForFrame:(id)
+
+  will return:
+
+    "webView:didFinishLoadFrame:", "v@:@@"
+
+--]]
+function toselector (s)
+  local objc_types = {
+    void = "v",
+    id = "@",
+    IBAction = "@",
+    double = "d",
+    int = "i"
+    --TODO: add more types
+  }
+  local sel = ""
+  local types = ""
+  local w
+  local i = 0
+  local istype = true
+  local hasreturntype = false
+
+  while 1 do
+    w, i = string.match(s, "([%w_:]+)()", i)
+    if w == nil then break end
+    if istype then
+      types = types .. objc_types[w]
+      if not hasreturntype then
+        types = types .. "@:" -- add self and _cmd types
+        hasreturntype = true
+      end
+    else
+      sel = sel .. w
+    end
+    istype = not istype
+  end
+  return sel, types
+end
+
+--[[
+
+  Call function func with arguments if it's not nil
+
+--]]
+function maybecall(func, ...)
+  if func ~= nil then
+    func(...)
+  end
+end
+
+
+-------------------------------------------------------------------------------------
+
+function Class (param)
+  return objc.newclass(
+    param.name or unique_classname(param.prefix or ""),
+    param.parent or objc.class.NSObject,
+    function (c)
+      for k, v in pairs(param.methods) do
+        local sel, typ = toselector(k)
+        objc.addmethod(c, sel, typ, v)
+      end
+    end)
+end
+
+function Object (param)
+  return Class(param):alloc():init()
+end
+
+function setaction (t, func)
+  local ctr = Object{
+                prefix = "ActionController",
+                methods = {
+                  ["(IBAction)doAction:(id)"] = func
+                }
+              }
+  t.object:setTarget_(ctr)
+  t.object:setAction_(ctr.doAction_)
+end
 
 -------------------------------------------------------------------------------------
 
 Window = {}
 
 function Window:new (t)
-  local w = newinstance(self)
+  local w = newinstance(self, t)
   w.object = objc.class.NSWindow:alloc():initWithContentRect_styleMask_backing_defer_(
     objc.rect(t.x or 0, t.y or 0, t.width or 300, t.height or 200),
     t.style or 15,
@@ -102,56 +187,61 @@ end
 
 Button = {}
 
-function Button:new (t)
-  local b = newinstance(self)
+function Button:new (init)
+  local b = newinstance(self, init)
   b.object = objc.class.NSButton:alloc():initWithFrame_(
-                objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
-  b.object:setBezelStyle_(t.style or 1) -- NSRoundedBezelStyle
-  b.object:setTitle_(t.title or "")
-
-  if t.action ~= nil then
-    -- controller object is unique for every button
-    local ctr = objc.newclass(unique_classname("ButtonController"), objc.class.NSObject,
-      function (class)
-        objc.addmethod(class, "buttonAction:", "@@:@", function (s) print(s) t.action(button) end)
-      end):alloc():init()
-    b.object:setTarget_(ctr)
-    b.object:setAction_(ctr.buttonAction_)
-  end
-
+                objc.rect(b.x or 0, b.y or 0, b.width or 0, b.height or 0))
+  b.object:setBezelStyle_(b.style or 1) -- NSRoundedBezelStyle
+  b.object:setTitle_(b.title or "")
+  setaction(b, function () b:action() end)
   return b
 end
+
+--------------------------------------
+--[[
+Class{
+  name = "MyClass",
+  parent = objc.class.NSObject,
+  methods = {
+    "(id)webView:(id)didFinishLoadForFrame:(id)" = function () print "OK" end
+  }
+}
+]]
 
 -------------------------------------------------------------------------------------
 
 WebView = {}
 
-function WebView:new (t)
+function WebView:new (init)
 
   if not self.frameworkloaded then
     objc.loadframework("WebKit")
     self.frameworkloaded = true
   end
 
-  local w = newinstance(self)
+  local w = newinstance(self, init)
   w.object = objc.class.WebView:alloc():initWithFrame_(
-    objc.rect(t.x or 0, t.y or 0, t.width or 0, t.height or 0))
-  if t.onload ~= nil then
-    local delegate = objc.newclass(unique_classname("WebViewDelegate"), objc.class.NSObject,
-      function (class)
-        objc.addmethod(class, "webView:didFinishLoadForFrame:", "v@:@@",
-            function (sender, webview, frame)
-              t.onload(webview, frame)
-            end)
-      end):alloc():init()
-    w.object:setFrameLoadDelegate_(delegate)
-  end
-  if t.url ~= nil then
-    local frame = w.object:mainFrame()
-    frame:loadRequest_(objc.class.NSURLRequest:requestWithURL_(
-      objc.class.NSURL:URLWithString_(t.url)))
+    objc.rect(w.x or 0, w.y or 0, w.width or 0, w.height or 0))
+
+  w.object:setFrameLoadDelegate_(
+    Object{
+      prefix = "WebViewDelegate",
+      methods = {
+        ["(void)webView:(id)didFinishLoadForFrame:(id)"] =
+          function (_,_,frame) maybecall(w.onload, w, frame) end
+      }
+    }
+  )
+
+  if w.url ~= nil then
+    w:load(w.url)
   end
   return w
+end
+
+function WebView:load (url)
+  self.object:mainFrame():loadRequest_(objc.class.NSURLRequest:requestWithURL_(
+    objc.class.NSURL:URLWithString_(url)))
 end
 
 -------------------------------------------------------------------------------------
@@ -172,9 +262,9 @@ local sayButton = Button:new{
         width = 100,
         height = 60,
         title = "Say Hello",
-        action = function ()
+        action = function (btn)
                     print("Hello world!")
-                  end
+                 end
       }
 
 local quitButton = Button:new{
@@ -182,8 +272,11 @@ local quitButton = Button:new{
         width = 100,
         height = 60,
         title = "Quit",
-        action = function ()
-                    app:terminate_(nil)
+        action = function (sender)
+                    print("Click again to quit")
+                    sender.action = function ()
+                      app:terminate_(nil)
+                    end
                   end
       }
 
@@ -194,8 +287,8 @@ local web = WebView:new{
         y = 100,
         width = 500,
         height = 500,
-        url = "http://www.google.com",
-        onload = function (webview, frame)
+        url = "about:blank",
+        onload = function (w, frame)
                     -- save page screenshot
                     local v = frame:frameView():documentView()
                     local rect = v:bounds()
