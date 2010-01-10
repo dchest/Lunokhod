@@ -77,8 +77,7 @@ end
 
 --]]
 function unique_classname (prefix)
-  if prefix == nil then prefix = "Class" end
-  return prefix .. "_" .. string.gsub(uuid(), "-", "")
+  return (prefix or "Class") .. "_" .. string.gsub(uuid(), "-", "")
 end
 
 --[[
@@ -334,7 +333,7 @@ local web = WebView:new{
         y = 100,
         width = 500,
         height = 500,
-        url = "about:blank",
+        url = "http://www.google.com",
         onload = function (w, frame)
                     -- save page screenshot
                     local v = frame:frameView():documentView()
