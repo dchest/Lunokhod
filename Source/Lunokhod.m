@@ -782,12 +782,7 @@ static int lua_objc_loadframework(lua_State *state)
   // Get error from stack and output it
   if (!lua_isnil(luaState_, -1)) {
     const char *msg = lua_tostring(luaState_, -1);
-    lua_Debug info;
-    lua_getstack(luaState_, 0, &info);
-    lua_getfield(luaState_, LUA_GLOBALSINDEX, "f");
-    lua_getinfo(luaState_, ">S", &info);
-
-    NSLog(@"Lunokhod error [%d]: %s \n %s", info.currentline, msg, info.short_src);
+    NSLog(@"Lunokhod error: %s", msg);
   }
   else {
     NSLog(@"Lunokhod error: unknown");
