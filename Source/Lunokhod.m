@@ -162,7 +162,7 @@ static int lua_objc_callselector(lua_State *state)
 
   while (objcIndex < numberOfArguments) {
 
-    if (lua_isnil(state, luaIndex) || lua_isnone(state, luaIndex)) {
+    if (lua_isnoneornil(state, luaIndex)) {
       id null = nil;
       [inv setArgument:&null atIndex:objcIndex];
       objcIndex++;
