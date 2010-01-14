@@ -1,4 +1,4 @@
---[[
+---[[
 print("Hello from Lunokhod!")
 
 manager = objc.class.NSFileManager:defaultManager()
@@ -7,8 +7,7 @@ print(manager:displayNameAtPath_("/Applications"))
 
 number = objc.class.NSNumber:numberWithInteger_(200)
 print(number:className(), "(length=" .. number:className():length() .. ")", number)
---]]
---[[
+
 for i=1,20000 do
   manager = objc.class.NSFileManager:defaultManager()
   manager:currentDirectoryPath()

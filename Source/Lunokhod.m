@@ -52,6 +52,8 @@
 
 #define DISPATCH_TABLE_NAME "__LUNOKHOD_DISPATCH"
 #define OBJC_ID_METATABLE "_OBJC_ID_MT"
+#define OBJC_SEL_METATABLE "_OBJC_SEL_MT"
+#define OBJC_SEL_DIRECT_METATABLE "_OBJC_SEL_DIRECT_MT"
 #define SUPER_PREFIX "SUPER" // prefix for redefined method's supermethods. e.g. callMe: -> SUPERcallMe:
 
 //  We create (and add to registeredClasses) the following proxy objects for every class created in Lua to get luaState when resolving methods
@@ -420,14 +422,11 @@ static int lua_objc_pushselector(lua_State *state)
   SEL *selptr = lua_newuserdata(state, sizeof(SEL));
   *selptr = sel_registerName(selName);
   free(selName);
-  // Create metatable for selector
-	lua_newtable(state);
-  lua_pushstring(state, "__call");
+  // Set metatable for selector
   if (!isDirectCall)
-    lua_pushcfunction(state, lua_objc_callselector);
+    lua_getglobal(state, OBJC_SEL_METATABLE);
   else
-    lua_pushcfunction(state, lua_objc_direct_call);
-  lua_settable(state, -3);
+    lua_getglobal(state, OBJC_SEL_DIRECT_METATABLE);
   lua_setmetatable(state, -2);
   return 1;
 }
@@ -806,6 +805,20 @@ static int lua_objc_loadframework(lua_State *state)
   lua_pushcfunction(luaState_, lua_objc_releaseid);
   lua_settable(luaState_, -3);
   lua_setglobal(luaState_, OBJC_ID_METATABLE);
+
+  // Metatable for selector userdata
+  lua_newtable(luaState_);
+  lua_pushstring(luaState_, "__call");
+  lua_pushcfunction(luaState_, lua_objc_callselector);
+  lua_settable(luaState_, -3);
+  lua_setglobal(luaState_, OBJC_SEL_METATABLE);
+
+  // Metatable for selector with direct call userdata
+  lua_newtable(luaState_);
+  lua_pushstring(luaState_, "__call");
+  lua_pushcfunction(luaState_, lua_objc_direct_call);
+  lua_settable(luaState_, -3);
+  lua_setglobal(luaState_, OBJC_SEL_DIRECT_METATABLE);
 
   lua_gc(luaState_, LUA_GCRESTART, 0); // restart collector
   return self;
