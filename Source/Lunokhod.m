@@ -51,6 +51,7 @@
 
 
 #define DISPATCH_TABLE_NAME "__LUNOKHOD_DISPATCH"
+#define OBJC_ID_METATABLE "_OBJC_ID_MT"
 #define SUPER_PREFIX "SUPER" // prefix for redefined method's supermethods. e.g. callMe: -> SUPERcallMe:
 
 //  We create (and add to registeredClasses) the following proxy objects for every class created in Lua to get luaState when resolving methods
@@ -448,16 +449,7 @@ static void lua_objc_pushid(lua_State *state, id object)
   *p = object;
   [[NSGarbageCollector defaultCollector] disableCollectorForPointer:object];
   // Create metatable for id
-  lua_newtable(state);
-  lua_pushstring(state, "__index");
-  lua_pushcfunction(state, lua_objc_pushselector);
-  lua_settable(state, -3);
-  lua_pushstring(state, "__tostring");
-  lua_pushcfunction(state, lua_objc_id_tostring);
-  lua_settable(state, -3);
-  lua_pushstring(state, "__gc");
-  lua_pushcfunction(state, lua_objc_releaseid);
-  lua_settable(state, -3);
+  lua_getglobal(state, OBJC_ID_METATABLE);
   lua_setmetatable(state, -2);
 }
 
@@ -798,8 +790,22 @@ static int lua_objc_loadframework(lua_State *state)
 
   lua_setglobal(luaState_, "objc");
 
+  // Dispatch table
   lua_newtable(luaState_);
   lua_setglobal(luaState_, DISPATCH_TABLE_NAME);
+
+  // Metatable for id userdata
+  lua_newtable(luaState_);
+  lua_pushstring(luaState_, "__index");
+  lua_pushcfunction(luaState_, lua_objc_pushselector);
+  lua_settable(luaState_, -3);
+  lua_pushstring(luaState_, "__tostring");
+  lua_pushcfunction(luaState_, lua_objc_id_tostring);
+  lua_settable(luaState_, -3);
+  lua_pushstring(luaState_, "__gc");
+  lua_pushcfunction(luaState_, lua_objc_releaseid);
+  lua_settable(luaState_, -3);
+  lua_setglobal(luaState_, OBJC_ID_METATABLE);
 
   lua_gc(luaState_, LUA_GCRESTART, 0); // restart collector
   return self;
