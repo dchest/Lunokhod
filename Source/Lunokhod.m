@@ -700,6 +700,10 @@ static int lua_objc_addmethod(lua_State *state)
 static int lua_objc_super(lua_State *state)
 {
   SEL *selptr = lua_touserdata(state, 1);
+  if (selptr == NULL) {
+    lua_pushfstring(state, "argument 1 of 'objc.super()' must be a method");
+    lua_error(state); return 0;
+  }
   SEL selector = *selptr;
   const char *superSelectorName = [[NSString stringWithFormat:@SUPER_PREFIX"%@", NSStringFromSelector(selector)] UTF8String];
   lua_pushstring(state, superSelectorName);
