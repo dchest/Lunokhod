@@ -50,6 +50,9 @@
 #define LUA_OBJC_TYPE_ONEWAY 'V'
 
 
+#define DISPATCH_TABLE_NAME "__LUNOKHOD_DISPATCH"
+#define SUPER_PREFIX "SUPER" // prefix for redefined method's supermethods. e.g. callMe: -> SUPERcallMe:
+
 //  We create (and add to registeredClasses) the following proxy objects for every class created in Lua to get luaState when resolving methods
 @interface LuaObjcClassProxy : NSObject
 {
@@ -480,7 +483,7 @@ static int lua_objc_newclass(lua_State *state)
     return 0;
   }
   // Register class in function dispatch
-  lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+  lua_getglobal(state, DISPATCH_TABLE_NAME);
   lua_pushstring(state, className);
   lua_newtable(state);
   lua_settable(state, -3);
@@ -523,8 +526,12 @@ static int lua_objc_size(lua_State *state)
 // Finds Lua function for ObjC method and pushes it on top of stack
 void find_lua_function_for_method(lua_State *state, id obj, SEL selector)
 {
+  if ([NSStringFromSelector(selector) hasPrefix:@SUPER_PREFIX]) {
+    // calling super, replace obj with it's superclass
+    obj = [obj superclass];
+  }
   do {
-    lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+    lua_getglobal(state, DISPATCH_TABLE_NAME);
     lua_pushstring(state, [[obj className] UTF8String]);
     lua_gettable(state, -2);
     lua_getfield(state, -1, [NSStringFromSelector(selector) UTF8String]);
@@ -660,17 +667,45 @@ static int lua_objc_addmethod(lua_State *state)
   Class klass = lua_objc_toid(state, 1);
   const char *selName = lua_tostring(state, 2);
   const char *types = lua_tostring(state, 3);
+
+  IMP superIMP = class_getMethodImplementation(class_getSuperclass(klass), sel_registerName(selName));
+  if (superIMP != NULL) {
+    // register super method with a new name
+    NSString *superMethodName = [NSString stringWithFormat:@SUPER_PREFIX"%s", selName];
+    if (!class_addMethod(klass , NSSelectorFromString(superMethodName), superIMP, types)) {
+      lua_pushfstring(state, "cannot re-register supermethod '"SUPER_PREFIX"%s'", selName);
+      lua_error(state); return 0;
+    }
+    lua_getglobal(state, DISPATCH_TABLE_NAME);
+    lua_pushstring(state, class_getName(klass));
+    lua_gettable(state, -2);
+    lua_pushfstring(state, SUPER_PREFIX"%s", selName);
+    lua_pushvalue(state, 4);
+    lua_settable(state, -3);
+  }
+
   if (!class_addMethod(klass, sel_registerName(selName), (IMP)invokeLuaFunction, types)) {
     lua_pushfstring(state, "cannot add method '%s'", selName);
     lua_error(state); return 0;
   }
-  lua_getglobal(state, "__LUNOKHOD_DISPATCH");
+  lua_getglobal(state, DISPATCH_TABLE_NAME);
   lua_pushstring(state, class_getName(klass));
   lua_gettable(state, -2);
   lua_pushfstring(state, "%s", selName);
   lua_pushvalue(state, 4);
   lua_settable(state, -3);
   return 0;
+}
+
+static int lua_objc_super(lua_State *state)
+{
+  SEL *selptr = lua_touserdata(state, 1);
+  SEL selector = *selptr;
+  const char *superSelectorName = [[NSString stringWithFormat:@SUPER_PREFIX"%@", NSStringFromSelector(selector)] UTF8String];
+  lua_pushstring(state, superSelectorName);
+  lua_objc_pushselector(state);
+  lua_replace(state, 1); // replace selector with super selector
+  return lua_objc_callselector(state);
 }
 
 static int lua_objc_loadframework(lua_State *state)
@@ -741,6 +776,10 @@ static int lua_objc_loadframework(lua_State *state)
   lua_pushcfunction(luaState_, lua_objc_addmethod);
   lua_settable(luaState_, -3);
 
+  lua_pushstring(luaState_, "super");
+  lua_pushcfunction(luaState_, lua_objc_super);
+  lua_settable(luaState_, -3);
+
   lua_pushstring(luaState_, "loadframework");
   lua_pushcfunction(luaState_, lua_objc_loadframework);
   lua_settable(luaState_, -3);
@@ -756,7 +795,7 @@ static int lua_objc_loadframework(lua_State *state)
   lua_setglobal(luaState_, "objc");
 
   lua_newtable(luaState_);
-  lua_setglobal(luaState_, "__LUNOKHOD_DISPATCH");
+  lua_setglobal(luaState_, DISPATCH_TABLE_NAME);
 
   lua_gc(luaState_, LUA_GCRESTART, 0); // restart collector
   return self;

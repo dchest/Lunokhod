@@ -218,6 +218,11 @@ function Window:new (t)
     2,  -- NSBackingStoreBuffered
     false)
   w.object:setTitle_(t.title or "")
+  if t.subviews ~= nil then
+    for _, v in ipairs(t.subviews) do
+      w.object:contentView():addSubview_(v.object)
+    end
+  end
   return w
 end
 
@@ -284,22 +289,46 @@ function WebView:load (url)
     objc.class.NSURL:URLWithString_(url)))
 end
 
--------------------------------------------------------------------------------------
+function Application ()
+  return objc.class.NSApplication:sharedApplication()
+end
 
+
+--- // Super
+
+local test = Class{
+              name = "TestClass",
+              methods = {
+                ["(void)testMe:(id)"] =
+                  function (self, s)
+                    print("Parent: testMe! ", s)
+                  end
+              }
+            }
+
+local subTest = Class{
+                  name = "TestSubClass",
+                  parent = objc.class.TestClass,
+                  methods = {
+                    ["(void)testMe:(id)"] =
+                      function (self, s)
+                        print("Child: testMe ", s)
+                      end
+                  }
+                }
+
+o = subTest:alloc():init()
+objc.super(o.testMe_, o, "one")
+o:testMe_("two")
+
+-------------------------------------------------------------------------------------
+--[[
 -- Application
 
-app = objc.class.NSApplication:sharedApplication()
-
-local window = Window:new{
-        x = 0,
-        y = 0,
-        width = 500,
-        height = 600,
-        title = "Hello World"
-      }
+app = Application()
 
 local sayButton = Button:new{
-        superview = window,
+        --superview = window,
         width = 100,
         height = 60,
         title = "Say Hello",
@@ -309,7 +338,7 @@ local sayButton = Button:new{
       }
 
 local quitButton = Button:new{
-        superview = window,
+        --superview = window,
         x = 100,
         width = 100,
         height = 60,
@@ -321,6 +350,17 @@ local quitButton = Button:new{
                     end
                   end
       }
+
+
+local window = Window:new{
+        x = 0,
+        y = 0,
+        width = 500,
+        height = 600,
+        title = "Hello World",
+        subviews = { sayButton, quitButton }
+      }
+
 
 -- Example of prototype-based OO
 local anotherButton = quitButton:new{
