@@ -1,57 +1,7 @@
----[[
-print("Hello from Lunokhod!")
+-- This is not a module, since we want almost
+-- everything here to be in global space
 
-manager = objc.class.NSFileManager:defaultManager()
-print(manager:currentDirectoryPath())
-print(manager:displayNameAtPath_("/Applications"))
-
-number = objc.class.NSNumber:numberWithInteger_(200)
-print(number:className(), "(length=" .. number:className():length() .. ")", number)
-
-for i=1,20000 do
-  manager = objc.class.NSFileManager:defaultManager()
-  manager:currentDirectoryPath()
-  manager:displayNameAtPath_("/Applications"):length()
-end
---]]
-
-MyClass = objc.newclass("MyClass", objc.class.NSObject,
-  function (class) -- class initialization
-    print ("Class initialization")
-
-    objc.addmethod(class, "testMe", "v@:",
-      function (self)
-        print "testMe works"
-      end)
-
-    objc.addmethod(class, "secondTest:and:also:", "@@:idd@",
-      function (self, first, second, third, fourth)
-        print(self, "Second test")
-        print("1 argument: ", first)
-        print("2 argument: ", second)
-        print("3 argument: ", third)
-        print("4 argument: ", fourth)
-        return "string returned from secondTest:and:also:"
-      end)
-
-  end)
-
-MySubClass = objc.newclass("MySubClass", objc.class.MyClass,
-  function (class)
-    print ("initing subclass")
-  end)
-
-MyClass:alloc():init():testMe()
-sub = MySubClass:alloc():init()
-sub:testMe()
-print(sub:secondTest_and_also_(10, 20, 30, "from lua"))
---]]
-
----[[
-print("-----------------------------------------------")
-
-
---- Helpers --------------------------------------------------------------------------
+--- Helpers ---------------------------------------------------------------------
 
 --[[
 
@@ -89,7 +39,7 @@ end
     "(unsigned int)test" => "test", "I@:"
 
 --]]
-function parse_method (method)
+local function parse_method (method)
   local objc_types = {
     _Bool = "B",
     char = "c",
@@ -203,9 +153,10 @@ function setaction (t, func)
               }
   t.object:setTarget_(ctr)
   t.object:setAction_(ctr.doAction_)
+  return ctr -- just in case the caller needs it
 end
 
--------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
 
 Window = {}
 
@@ -235,7 +186,7 @@ function Window:show ()
   self.object:makeKeyAndOrderFront_(self.object)
 end
 
--------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
 
 Button = {}
 
@@ -252,7 +203,7 @@ function Button:new (init)
   return b
 end
 
--------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
 
 WebView = {}
 
@@ -288,106 +239,9 @@ function WebView:load (url)
     objc.class.NSURL:URLWithString_(url)))
 end
 
+----------------------------------------------------------------------------------
+
 function Application ()
   return objc.class.NSApplication:sharedApplication()
 end
 
-
---- // Super
-
-local test = Class{
-              name = "TestClass",
-              methods = {
-                ["(void)testMe:(id)"] =
-                  function (self, s)
-                    print("Parent: testMe! ", s)
-                  end
-              }
-            }
-
-local subTest = Class{
-                  name = "TestSubClass",
-                  parent = objc.class.TestClass,
-                  methods = {
-                    ["(void)testMe:(id)"] =
-                      function (self, s)
-                        print("Child: testMe ", s)
-                      end
-                  }
-                }
-
-o = subTest:alloc():init()
-objc.super(o.testMe_, o, "one")
-o:testMe_("two")
-
--------------------------------------------------------------------------------------
---[[
--- Application
-
-app = Application()
-
-local sayButton = Button:new{
-        --superview = window,
-        width = 100,
-        height = 60,
-        title = "Say Hello",
-        action = function (btn)
-                    print("Hello world!")
-                 end
-      }
-
-local quitButton = Button:new{
-        --superview = window,
-        x = 100,
-        width = 100,
-        height = 60,
-        title = "Quit",
-        action = function (sender)
-                    print("Click again to quit")
-                    sender.action = function ()
-                      app:terminate_(nil)
-                    end
-                  end
-      }
-
-
-local window = Window:new{
-        x = 0,
-        y = 0,
-        width = 500,
-        height = 600,
-        title = "Hello World",
-        subviews = { sayButton, quitButton }
-      }
-
-
--- Example of prototype-based OO
-local anotherButton = quitButton:new{
-  x = 200,
-  title = "Haha",
-  action = function () print"Haha" end
-}
-
-local web = WebView:new{
-        y = 100,
-        width = 500,
-        height = 500,
-        url = "http://www.google.com",
-        onload = function (w, frame)
-                    -- save page screenshot
-                    local v = frame:frameView():documentView()
-                    local rect = v:bounds()
-                    local imageRep = v:bitmapImageRepForCachingDisplayInRect_(rect)
-                    v:cacheDisplayInRect_toBitmapImageRep_(rect, imageRep)
-                    local image = objc.class.NSImage:alloc():init()
-                    image:addRepresentation_(imageRep)
-                    image:TIFFRepresentation():writeToFile_atomically_("/Users/dmitry/Desktop/1.tiff", 1)
-                 end
-      }
-window:addview(web)
-
-window:show()
-
-app:run()
-
---]] --EOF

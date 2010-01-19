@@ -113,9 +113,11 @@
 		0A5A496A10F28E0D0017275E /* lzio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lzio.h; path = Lua/src/lzio.h; sourceTree = "<group>"; };
 		0A5A49BE10F28FE80017275E /* Lunokhod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lunokhod.h; path = Source/Lunokhod.h; sourceTree = "<group>"; };
 		0A5A49BF10F28FE80017275E /* Lunokhod.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Lunokhod.m; path = Source/Lunokhod.m; sourceTree = "<group>"; };
-		0A5A4A6E10F298F70017275E /* test.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = test.lua; path = Source/test.lua; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.lua; };
+		0A5A4A6E10F298F70017275E /* main.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lua; name = main.lua; path = Source/main.lua; sourceTree = "<group>"; };
 		0A71440310F68D16009F985E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
-		0AFAA61410FEA462000823C6 /* blog.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lua; name = blog.lua; path = Source/blog.lua; sourceTree = "<group>"; };
+		0ABFCB2111062339008E4DD4 /* ui.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lua; name = ui.lua; path = Source/ui.lua; sourceTree = "<group>"; };
+		0ABFCB5F110628DF008E4DD4 /* demo.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lua; name = demo.lua; path = Source/demo.lua; sourceTree = "<group>"; };
+		0AFAA61410FEA462000823C6 /* blogpost.lua */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lua; name = blogpost.lua; path = Source/blogpost.lua; sourceTree = "<group>"; };
 		32A70AAB03705E1F00C91783 /* Lunokhod_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lunokhod_Prefix.pch; sourceTree = "<group>"; };
 		8DD76FA10486AA7600D96B5E /* Lunokhod */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Lunokhod; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6859EA3029092ED04C91782 /* Lunokhod.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Lunokhod.1; sourceTree = "<group>"; };
@@ -138,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				0A5A498B10F28E100017275E /* Lua */,
+				0ABFCB6211062902008E4DD4 /* App */,
 				0A5A49B310F28FA20017275E /* Classes */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859EA2029092E104C91782 /* Documentation */,
@@ -229,10 +232,19 @@
 			children = (
 				0A5A49BE10F28FE80017275E /* Lunokhod.h */,
 				0A5A49BF10F28FE80017275E /* Lunokhod.m */,
-				0A5A4A6E10F298F70017275E /* test.lua */,
-				0AFAA61410FEA462000823C6 /* blog.lua */,
 			);
 			name = Classes;
+			sourceTree = "<group>";
+		};
+		0ABFCB6211062902008E4DD4 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				0A5A4A6E10F298F70017275E /* main.lua */,
+				0ABFCB5F110628DF008E4DD4 /* demo.lua */,
+				0ABFCB2111062339008E4DD4 /* ui.lua */,
+				0AFAA61410FEA462000823C6 /* blogpost.lua */,
+			);
+			name = App;
 			sourceTree = "<group>";
 		};
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {

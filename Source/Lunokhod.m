@@ -824,6 +824,16 @@ static int lua_objc_loadframework(lua_State *state)
   return self;
 }
 
+- (void)addPackagePath:(NSString *)path
+{
+  lua_getglobal(luaState_, "package");
+  lua_getfield(luaState_, -1, "path");
+  const char *oldpath = lua_tostring(luaState_, -1);
+  lua_pushstring(luaState_, "path");
+  lua_pushfstring(luaState_, "%s;%s", oldpath, [path UTF8String]);
+  lua_settable(luaState_, -4);
+}
+
 - (void)dealloc
 {
   [registeredClasses release];
@@ -916,5 +926,6 @@ static int lua_objc_loadframework(lua_State *state)
     return NO;
   }
 }
+
 
 @end

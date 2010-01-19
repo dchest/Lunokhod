@@ -6,11 +6,13 @@ int main (int argc, const char * argv[])
 {
   NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
-  Lunokhod *lun = [[Lunokhod alloc] init];
-
   NSString *path = [[[[NSString stringWithUTF8String:argv[0]] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent] stringByDeletingLastPathComponent];
 
-  NSString *filename = [path stringByAppendingPathComponent:@"Source/test.lua"];
+
+  Lunokhod *lun = [[Lunokhod alloc] init];
+  [lun addPackagePath:[path stringByAppendingPathComponent:@"Source/?.lua"]];
+
+  NSString *filename = [path stringByAppendingPathComponent:@"Source/main.lua"];
 
   [lun doFile:filename];
 

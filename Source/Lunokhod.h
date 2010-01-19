@@ -16,5 +16,6 @@
 - (BOOL)doFile:(NSString *)filename;
 - (BOOL)loadFile:(NSString *)filename withFunctionName:(NSString *)functionName;
 - (BOOL)loadString:(NSString *)string withFunctionName:(NSString *)functionName;
+- (void)addPackagePath:(NSString *)path;
 
 @end
